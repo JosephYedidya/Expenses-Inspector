@@ -1287,13 +1287,18 @@ function updateTransactionsSummary() {
 
  document.getElementById('searchInput').addEventListener('input', debouncedSearch);
 
- // Modal functions
- function openSettingsModal() {
-     document.getElementById('totalTransactions').textContent = transactions.length;
-     document.getElementById('totalGoals').textContent = goals.length;
-     document.getElementById('totalBudgets').textContent = budgets.length;
-     document.getElementById('settingsModal').classList.add('active');
- }
+// Modal functions
+function openSettingsModal() {
+    try {
+        document.getElementById('totalTransactions').textContent = AppState.transactions.length;
+        document.getElementById('totalGoals').textContent = AppState.goals.length;
+        document.getElementById('totalBudgets').textContent = AppState.budgets.length;
+        document.getElementById('settingsModal').classList.add('active');
+    } catch (error) {
+        console.error('Failed to open settings modal:', error);
+        showNotification('❌', 'Erreur lors de l\'ouverture des paramètres', 'error');
+    }
+}
 
  function closeSettingsModal() {
      document.getElementById('settingsModal').classList.remove('active');
@@ -2175,6 +2180,77 @@ function updateAll() {
      if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // Ctrl+U
  };
 
- console.log('%c🔒 Finance Tracker Pro - v2.0', 'color: #0095f6; font-size: 20px; font-weight: bold;');
- console.log('%c⚠️ Attention : Cette application stocke vos données localement dans votre navigateur.', 'color: #ff9800; font-size: 14px;');
- console.log('%c✅ Vos données sont privées et ne sont jamais envoyées à un serveur.', 'color: #10b981; font-size: 14px;');
+console.log('%c🔒 Finance Tracker Pro - v2.0', 'color: #0095f6; font-size: 20px; font-weight: bold;');
+console.log('%c⚠️ Attention : Cette application stocke vos données localement dans votre navigateur.', 'color: #ff9800; font-size: 14px;');
+console.log('%c✅ Vos données sont privées et ne sont jamais envoyées à un serveur.', 'color: #10b981; font-size: 14px;');
+
+// Service Worker Registration for PWA
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then((registration) => {
+                    console.log('SW registered: ', registration);
+                    
+                    // Handle service worker updates
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                showNotification('🔄', 'Nouvelle version disponible. Rechargez la page.', 'info');
+                            }
+                        });
+                    });
+                })
+                .catch((registrationError) => {
+                    console.log('SW registration failed: ', registrationError);
+                });
+        });
+        
+        // Handle service worker messages
+        navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'SW_UPDATE_AVAILABLE') {
+                showNotification('🔄', 'Mise à jour disponible. Actualisez la page.', 'info');
+            }
+        });
+    }
+}
+
+// PWA Installation Prompt
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    console.log('PWA install prompt available');
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // Show install button or notification
+    setTimeout(() => {
+        if (deferredPrompt) {
+            showNotification('📱', 'Installez l\'application pour une meilleure expérience', 'info');
+        }
+    }, 10000); // Show after 10 seconds if user hasn't installed
+});
+
+// Install PWA function
+function installPWA() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('User accepted the install prompt');
+                showNotification('✅', 'Application installée avec succès !', 'success');
+            } else {
+                console.log('User dismissed the install prompt');
+            }
+            deferredPrompt = null;
+        });
+    }
+}
+
+// PWA Update handling
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
+    });
+}

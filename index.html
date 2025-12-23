@@ -8,6 +8,17 @@
     
     <!-- Favicons optimisés pour le web -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='30' fill='%230095f6'/><text x='90' y='110' font-family='Arial' font-size='80' text-anchor='middle' fill='white'>💰</text></svg>">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Finance Tracker">
+    
     <link rel="stylesheet" href="./Style.css">
     <title>Finance Tracker Pro</title>
    
@@ -20,20 +31,20 @@
                 <span>Finance Tracker</span>
             </div>
             <div class="nav-actions">
-                <button class="nav-btn" onclick="toggleNotifications()" title="Notifications">
+                <button class="nav-btn btn-icon" onclick="toggleNotifications()" title="Notifications" aria-label="Notifications">
                     <span>🔔</span>
                 </button>
-                <button class="nav-btn" onclick="togglePrivateMode()" id="privateModeBtn" title="Mode privé">
+                <button class="nav-btn btn-icon" onclick="togglePrivateMode()" id="privateModeBtn" title="Mode privé" aria-label="Mode privé">
                     <span>👁️</span>
                 </button>
-                <button class="nav-btn" onclick="openSettingsModal()" title="Paramètres">
+                <button class="nav-btn btn-icon" onclick="openSettingsModal()" title="Paramètres" aria-label="Paramètres">
                     <span>⚙️</span>
                 </button>
-                <button class="export-btn" onclick="openExportModal()">
+                <button class="export-btn btn btn-primary" onclick="openExportModal()" aria-label="Exporter les données">
                     <span>📤</span>
                     <span>Export</span>
                 </button>
-                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <button class="theme-toggle btn-icon" id="themeToggle" aria-label="Basculer le thème">
                     <span id="themeIcon">🌙</span>
                 </button>
             </div>
@@ -135,8 +146,14 @@
                             </select>
                         </div>
                         <div class="btn-group">
-                            <button type="submit" class="btn btn-revenue" data-type="revenue">+ Revenu</button>
-                            <button type="submit" class="btn btn-expense" data-type="expense">- Dépense</button>
+                            <button type="submit" class="btn btn-success" data-type="revenue" aria-label="Ajouter un revenu">
+                                <span>💰</span>
+                                + Revenu
+                            </button>
+                            <button type="submit" class="btn btn-danger" data-type="expense" aria-label="Ajouter une dépense">
+                                <span>💸</span>
+                                - Dépense
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -172,8 +189,9 @@
                         </select>
                     </div>
                     <canvas id="lineChart" class="chart-canvas" style="cursor: pointer;"></canvas>
-                    <button class="btn" onclick="openTimeAnalysisModal()" style="width: 100%; background: var(--accent-balance); color: white; margin-top: 15px;">
-                        📊 Voir l'analyse détaillée
+                    <button class="btn btn-primary" onclick="openTimeAnalysisModal()" style="width: 100%; margin-top: 15px;" aria-label="Voir l'analyse détaillée">
+                        <span>📊</span>
+                        Voir l'analyse détaillée
                     </button>
                 </div>
             </div>
@@ -212,7 +230,8 @@
                             <p>Aucun objectif</p>
                         </div>
                     </div>
-                    <button class="btn" onclick="openGoalModal()" style="width: 100%; background: var(--accent-balance); color: white; margin-top: 15px;">
+                    <button class="btn btn-primary" onclick="openGoalModal()" style="width: 100%; margin-top: 15px;" aria-label="Ajouter un objectif">
+                        <span>🎯</span>
                         + Ajouter un objectif
                     </button>
                 </div>
@@ -227,7 +246,8 @@
                             <p>Aucun budget</p>
                         </div>
                     </div>
-                    <button class="btn" onclick="openBudgetModal()" style="width: 100%; background: var(--accent-balance); color: white; margin-top: 15px;">
+                    <button class="btn btn-primary" onclick="openBudgetModal()" style="width: 100%; margin-top: 15px;" aria-label="Définir un budget">
+                        <span>💰</span>
                         + Définir un budget
                     </button>
                 </div>
@@ -251,10 +271,12 @@
                             <option value="all">Toutes les catégories</option>
                         </select>
                     </div>
-                    <button class="btn" onclick="applyFilters()" style="width: 100%; background: var(--accent-balance); color: white; margin-top: 10px;">
+                    <button class="btn btn-primary" onclick="applyFilters()" style="width: 100%; margin-top: 10px;" aria-label="Appliquer les filtres">
+                        <span>🔍</span>
                         Appliquer les filtres
                     </button>
-                    <button class="btn" onclick="resetFilters()" style="width: 100%; background: var(--bg-primary); color: var(--text-primary); margin-top: 10px; border: 2px solid var(--border-color);">
+                    <button class="btn btn-ghost" onclick="resetFilters()" style="width: 100%; margin-top: 10px;" aria-label="Réinitialiser les filtres">
+                        <span>🔄</span>
                         Réinitialiser
                     </button>
                 </div>
@@ -269,7 +291,8 @@
                             <p>Aucune transaction récurrente</p>
                         </div>
                     </div>
-                    <button class="btn" onclick="openRecurringModal()" style="width: 100%; background: var(--accent-balance); color: white; margin-top: 15px;">
+                    <button class="btn btn-primary" onclick="openRecurringModal()" style="width: 100%; margin-top: 15px;" aria-label="Ajouter une récurrence">
+                        <span>🔄</span>
                         + Ajouter récurrence
                     </button>
                 </div>
@@ -331,8 +354,9 @@
                     </select>
                 </div>
 
-                <button class="btn" onclick="resetPinCode()" style="width: 100%; background: var(--accent-expense); color: white; margin-top: 10px;">
-                    🔄 Réinitialiser le code PIN
+                <button class="btn btn-danger" onclick="resetPinCode()" style="width: 100%; margin-top: 10px;" aria-label="Réinitialiser le code PIN">
+                    <span>🔄</span>
+                    Réinitialiser le code PIN
                 </button>
             </div>
 
@@ -340,8 +364,9 @@
                 <h3 style="color: var(--text-primary); margin-bottom: 15px; font-size: 1.1em;">📊 Données</h3>
                 
                 <div style="display: grid; gap: 10px;">
-                    <button class="btn" onclick="clearAllData()" style="width: 100%; background: var(--accent-expense); color: white;">
-                        🗑️ Supprimer toutes les données
+                    <button class="btn btn-danger" onclick="clearAllData()" style="width: 100%;" aria-label="Supprimer toutes les données">
+                        <span>🗑️</span>
+                        Supprimer toutes les données
                     </button>
                 </div>
             </div>
@@ -370,8 +395,11 @@
             </div>
 
             <div class="modal-actions">
-                <button type="button" class="btn btn-save" onclick="closeSettingsModal()">Fermer</button>
-            </div>
+                <button type="button" class="btn btn-ghost" onclick="closeSettingsModal()">
+                    <span>✖️</span>
+                    Fermer
+                </button>
+                </div>
         </div>
     </div>
 
@@ -418,8 +446,9 @@
             <div style="margin-bottom: 30px;">
                 <h3 style="color: var(--text-primary); margin-bottom: 15px; font-size: 1.2em;">📥 Importer des données</h3>
                 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
-                <button class="btn" onclick="document.getElementById('importFile').click()" style="width: 100%; background: var(--accent-revenue); color: white; margin-bottom: 10px;">
-                    📥 Importer depuis JSON
+                <button class="btn btn-success" onclick="document.getElementById('importFile').click()" style="width: 100%; margin-bottom: 10px;" aria-label="Importer depuis JSON">
+                    <span>📥</span>
+                    Importer depuis JSON
                 </button>
                 <p style="color: var(--text-secondary); font-size: 0.85em; text-align: center;">
                     Sélectionnez un fichier JSON exporté précédemment
@@ -428,11 +457,13 @@
             <div>
                 <h3 style="color: var(--text-primary); margin-bottom: 15px; font-size: 1.2em;">📤 Exporter vos données</h3>
                 <div style="display: grid; gap: 12px;">
-                    <button class="btn" onclick="exportToJSON()" style="width: 100%; background: var(--accent-balance); color: white;">
-                        📄 Exporter en JSON
+                    <button class="btn btn-primary" onclick="exportToJSON()" style="width: 100%;" aria-label="Exporter en JSON">
+                        <span>📄</span>
+                        Exporter en JSON
                     </button>
-                    <button class="btn" onclick="exportToCSV()" style="width: 100%; background: var(--accent-balance); color: white;">
-                        📊 Exporter en CSV
+                    <button class="btn btn-primary" onclick="exportToCSV()" style="width: 100%;" aria-label="Exporter en CSV">
+                        <span>📊</span>
+                        Exporter en CSV
                     </button>
                 </div>
                 <p style="color: var(--text-secondary); font-size: 0.85em; text-align: center; margin-top: 10px;">
