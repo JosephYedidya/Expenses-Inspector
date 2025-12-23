@@ -328,11 +328,11 @@ function togglePrivateMode() {
 
  function resetInactivityTimer() {
      clearTimeout(inactivityTimer);
-     if (pinCode && !isLocked && lockTimeout > 0) {
+     if (AppState.pinCode && !AppState.isLocked && AppState.lockTimeout > 0) {
          inactivityTimer = setTimeout(() => {
              lockApp();
              showNotification('🔒', 'Application verrouillée pour sécurité');
-         }, lockTimeout);
+         }, AppState.lockTimeout);
      }
  }
 
@@ -377,13 +377,13 @@ function togglePrivateMode() {
      }, 16);
  }
 
- // Dashboard update
+// Dashboard update
  function updateDashboard() {
-     const totalRevenue = transactions
+     const totalRevenue = AppState.transactions
          .filter(t => t.type === 'revenue')
          .reduce((sum, t) => sum + t.amount, 0);
      
-     const totalExpense = transactions
+     const totalExpense = AppState.transactions
          .filter(t => t.type === 'expense')
          .reduce((sum, t) => sum + t.amount, 0);
      
@@ -481,7 +481,7 @@ function updateCategoryChart() {
 
      ctx.clearRect(0, 0, width, height);
      
-     if (transactions.length === 0) {
+     if (AppState.transactions.length === 0) {
          ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary');
          ctx.font = 'bold 32px system-ui';
          ctx.textAlign = 'center';
@@ -492,7 +492,7 @@ function updateCategoryChart() {
      const now = new Date();
      const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
      
-     const filteredTransactions = transactions.filter(t => {
+     const filteredTransactions = AppState.transactions.filter(t => {
          const transactionDate = new Date(t.date);
          return transactionDate >= startDate;
      });
@@ -750,11 +750,11 @@ function updateTransactionsSummary() {
 
  // Financial tips
  function updateFinancialTips() {
-     const totalRevenue = transactions
+     const totalRevenue = AppState.transactions
          .filter(t => t.type === 'revenue')
          .reduce((sum, t) => sum + t.amount, 0);
      
-     const totalExpense = transactions
+     const totalExpense = AppState.transactions
          .filter(t => t.type === 'expense')
          .reduce((sum, t) => sum + t.amount, 0);
 
@@ -783,7 +783,7 @@ function updateTransactionsSummary() {
          });
      }
 
-     const expenses = transactions.filter(t => t.type === 'expense');
+     const expenses = AppState.transactions.filter(t => t.type === 'expense');
      if (expenses.length > 0) {
          const categoryTotals = {};
          expenses.forEach(t => {
@@ -844,26 +844,26 @@ function updateTransactionsSummary() {
      });
      tipsNavigation.innerHTML = dotsHTML;
 
-     currentTipIndex = 0;
+     AppState.currentTipIndex = 0;
      if (tipInterval) clearInterval(tipInterval);
      
      if (tips.length > 1) {
          tipInterval = setInterval(() => {
-             currentTipIndex = (currentTipIndex + 1) % tips.length;
+             AppState.currentTipIndex = (AppState.currentTipIndex + 1) % tips.length;
              updateTipPosition();
          }, 5000);
      }
  }
 
  function goToTip(index) {
-     currentTipIndex = index;
+     AppState.currentTipIndex = index;
      updateTipPosition();
      
      if (tipInterval) clearInterval(tipInterval);
      const tips = document.querySelectorAll('.tip-card');
      if (tips.length > 1) {
          tipInterval = setInterval(() => {
-             currentTipIndex = (currentTipIndex + 1) % tips.length;
+             AppState.currentTipIndex = (AppState.currentTipIndex + 1) % tips.length;
              updateTipPosition();
          }, 5000);
      }
@@ -874,12 +874,12 @@ function updateTransactionsSummary() {
      const dots = document.querySelectorAll('.tip-dot');
      
      if (wrapper) {
-         const offset = currentTipIndex * 100;
+         const offset = AppState.currentTipIndex * 100;
          wrapper.style.transform = `translateX(-${offset}%)`;
      }
      
      dots.forEach((dot, index) => {
-         if (index === currentTipIndex) {
+         if (index === AppState.currentTipIndex) {
              dot.classList.add('active');
          } else {
              dot.classList.remove('active');
@@ -891,23 +891,23 @@ function updateTransactionsSummary() {
  function updateGoals() {
      const container = document.getElementById('goalsContainer');
      
-     if (goals.length === 0) {
+     if (AppState.goals.length === 0) {
          container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎯</div><p>Aucun objectif</p></div>';
          return;
      }
 
-     const totalRevenue = transactions
+     const totalRevenue = AppState.transactions
          .filter(t => t.type === 'revenue')
          .reduce((sum, t) => sum + t.amount, 0);
      
-     const totalExpense = transactions
+     const totalExpense = AppState.transactions
          .filter(t => t.type === 'expense')
          .reduce((sum, t) => sum + t.amount, 0);
      
      const currentSavings = totalRevenue - totalExpense;
 
      let goalsHTML = '';
-     goals.forEach((goal, index) => {
+     AppState.goals.forEach((goal, index) => {
          const progress = Math.min((currentSavings / goal.target) * 100, 100);
          const remaining = Math.max(goal.target - currentSavings, 0);
          
@@ -935,7 +935,7 @@ function updateTransactionsSummary() {
 
  function deleteGoal(index) {
      if (confirm('Supprimer cet objectif ?')) {
-         goals.splice(index, 1);
+         AppState.goals.splice(index, 1);
          saveGoals();
          updateGoals();
      }
@@ -975,7 +975,7 @@ function updateTransactionsSummary() {
          createdAt: new Date().toISOString()
      };
 
-     goals.push(goal);
+     AppState.goals.push(goal);
      saveGoals();
      closeGoalModal();
      updateGoals();
@@ -986,7 +986,7 @@ function updateTransactionsSummary() {
  function updateBudgets() {
      const container = document.getElementById('budgetsContainer');
      
-     if (budgets.length === 0) {
+     if (AppState.budgets.length === 0) {
          container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💰</div><p>Aucun budget</p></div>';
          return;
      }
@@ -995,7 +995,7 @@ function updateTransactionsSummary() {
      const currentMonth = now.getMonth();
      const currentYear = now.getFullYear();
 
-     const monthlyExpenses = transactions.filter(t => {
+     const monthlyExpenses = AppState.transactions.filter(t => {
          const tDate = new Date(t.date);
          return t.type === 'expense' && 
                 tDate.getMonth() === currentMonth && 
@@ -1003,7 +1003,7 @@ function updateTransactionsSummary() {
      });
 
      let budgetsHTML = '';
-     budgets.forEach((budget, index) => {
+     AppState.budgets.forEach((budget, index) => {
          const categoryExpenses = monthlyExpenses.filter(t => t.category === budget.category);
          const spent = categoryExpenses.reduce((sum, t) => sum + t.amount, 0);
          const remaining = budget.amount - spent;
@@ -1047,7 +1047,7 @@ function updateTransactionsSummary() {
 
  function deleteBudget(index) {
      if (confirm('Supprimer ce budget ?')) {
-         budgets.splice(index, 1);
+         AppState.budgets.splice(index, 1);
          saveBudgets();
          updateBudgets();
      }
@@ -1079,7 +1079,7 @@ function updateTransactionsSummary() {
          return;
      }
 
-     const existingBudget = budgets.find(b => b.category === category);
+     const existingBudget = AppState.budgets.find(b => b.category === category);
      if (existingBudget) {
          alert('Un budget existe déjà pour cette catégorie. Supprimez-le d\'abord.');
          return;
@@ -1092,7 +1092,7 @@ function updateTransactionsSummary() {
          createdAt: new Date().toISOString()
      };
 
-     budgets.push(budget);
+     AppState.budgets.push(budget);
      saveBudgets();
      closeBudgetModal();
      updateBudgets();
@@ -1102,13 +1102,13 @@ function updateTransactionsSummary() {
  function updateRecurring() {
      const container = document.getElementById('recurringContainer');
      
-     if (recurringTransactions.length === 0) {
+     if (AppState.recurringTransactions.length === 0) {
          container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔄</div><p>Aucune transaction récurrente</p></div>';
          return;
      }
 
      let recurringHTML = '';
-     recurringTransactions.forEach((recurring, index) => {
+     AppState.recurringTransactions.forEach((recurring, index) => {
          const frequencyText = {
              'weekly': 'Hebdomadaire',
              'monthly': 'Mensuel',
@@ -1138,7 +1138,7 @@ function updateTransactionsSummary() {
 
  function deleteRecurring(index) {
      if (confirm('Supprimer cette transaction récurrente ?')) {
-         recurringTransactions.splice(index, 1);
+         AppState.recurringTransactions.splice(index, 1);
          saveRecurring();
          updateRecurring();
      }
@@ -1183,7 +1183,7 @@ function updateTransactionsSummary() {
          createdAt: new Date().toISOString()
      };
 
-     recurringTransactions.push(recurring);
+     AppState.recurringTransactions.push(recurring);
      saveRecurring();
      closeRecurringModal();
      updateRecurring();
@@ -1191,13 +1191,13 @@ function updateTransactionsSummary() {
 
  // Advanced stats
  function updateAdvancedStats() {
-     if (transactions.length === 0) {
+     if (AppState.transactions.length === 0) {
          document.getElementById('avgPerDay').textContent = '0 FCFA';
          document.getElementById('avgPerMonth').textContent = '0 FCFA';
          return;
      }
 
-     const expenses = transactions.filter(t => t.type === 'expense');
+     const expenses = AppState.transactions.filter(t => t.type === 'expense');
      const totalExpense = expenses.reduce((sum, t) => sum + t.amount, 0);
 
      const dates = expenses.map(t => new Date(t.date).toDateString());
@@ -1217,7 +1217,7 @@ function updateTransactionsSummary() {
  // Filter functions
  function populateFilterCategories() {
      const filterCategory = document.getElementById('filterCategory');
-     const categories = [...new Set(transactions.map(t => t.category))];
+     const categories = [...new Set(AppState.transactions.map(t => t.category))];
      
      let options = '<option value="all">Toutes les catégories</option>';
      categories.forEach(cat => {
@@ -1232,7 +1232,7 @@ function updateTransactionsSummary() {
      const typeFilter = document.getElementById('filterType').value;
      const categoryFilter = document.getElementById('filterCategory').value;
 
-     filteredTransactions = transactions.filter(t => {
+     AppState.filteredTransactions = AppState.transactions.filter(t => {
          const matchSearch = t.description.toLowerCase().includes(searchTerm);
          const matchType = typeFilter === 'all' || t.type === typeFilter;
          const matchCategory = categoryFilter === 'all' || t.category === categoryFilter;
@@ -1247,23 +1247,23 @@ function updateTransactionsSummary() {
      document.getElementById('searchInput').value = '';
      document.getElementById('filterType').value = 'all';
      document.getElementById('filterCategory').value = 'all';
-     filteredTransactions = [];
+     AppState.filteredTransactions = [];
      renderTransactions();
  }
 
  function renderFilteredTransactions() {
      const container = document.getElementById('transactionsContainer');
      
-     if (filteredTransactions.length === 0) {
+     if (AppState.filteredTransactions.length === 0) {
          container.innerHTML = '<div class="masonry-item"><div class="form-card"><div class="empty-state"><div class="empty-state-icon">🔍</div><p>Aucun résultat</p></div></div></div>';
          return;
      }
 
-     const transactionsHTML = filteredTransactions
+     const transactionsHTML = AppState.filteredTransactions
          .slice()
          .reverse()
          .map(t => {
-             const index = transactions.indexOf(t);
+             const index = AppState.transactions.indexOf(t);
              return `
                  <div class="masonry-item">
                      <div class="transaction-card" onclick="openEditModal(${index})">
@@ -1314,7 +1314,7 @@ function openSettingsModal() {
  function updatePinLength() {
      const newLength = parseInt(document.getElementById('pinLength').value);
      
-     if (pinCode) {
+     if (AppState.pinCode) {
          const enteredPin = prompt('⚠️ Entrez votre code PIN actuel pour modifier la longueur :');
          
          if (!enteredPin) {
@@ -1329,9 +1329,9 @@ function openSettingsModal() {
          }
          
          if (confirm(`Changer la longueur du code PIN à ${newLength} chiffres ?\n\n⚠️ Cela réinitialisera votre code actuel.`)) {
-             pinLength = newLength;
-             localStorage.setItem('pinLength', pinLength);
-             pinCode = null;
+             AppState.pinLength = newLength;
+             localStorage.setItem('pinLength', AppState.pinLength);
+             AppState.pinCode = null;
              localStorage.removeItem('pinCode');
              updatePinInputs();
              showNotification('✅', `Longueur du PIN modifiée à ${newLength} chiffres. Créez un nouveau code.`);
@@ -1341,8 +1341,8 @@ function openSettingsModal() {
              document.getElementById('pinLength').value = pinLength;
          }
      } else {
-         pinLength = newLength;
-         localStorage.setItem('pinLength', pinLength);
+         AppState.pinLength = newLength;
+         localStorage.setItem('pinLength', AppState.pinLength);
          updatePinInputs();
          showNotification('✅', `Longueur du PIN définie à ${newLength} chiffres`);
      }
@@ -1353,14 +1353,14 @@ function openSettingsModal() {
 
  function updateLockTimeout() {
      const newTimeout = parseInt(document.getElementById('lockTimeout').value);
-     lockTimeout = newTimeout;
-     localStorage.setItem('lockTimeout', lockTimeout);
+     AppState.lockTimeout = newTimeout;
+     localStorage.setItem('lockTimeout', AppState.lockTimeout);
      showNotification('✅', 'Durée de verrouillage modifiée');
      resetInactivityTimer();
  }
 
  function resetPinCode() {
-     if (!pinCode) {
+     if (!AppState.pinCode) {
          showNotification('ℹ️', 'Aucun code PIN n\'est défini actuellement');
          return;
      }
@@ -1372,13 +1372,13 @@ function openSettingsModal() {
          return;
      }
      
-     if (enteredPin !== pinCode) {
+     if (enteredPin !== AppState.pinCode) {
          showNotification('❌', 'Code PIN incorrect');
          return;
      }
      
      if (confirm('⚠️ Êtes-vous sûr de vouloir réinitialiser votre code PIN ?\n\nVous devrez en créer un nouveau lors de votre prochaine connexion.')) {
-         pinCode = null;
+         AppState.pinCode = null;
          localStorage.removeItem('pinCode');
          showNotification('✅', 'Code PIN réinitialisé avec succès');
          closeSettingsModal();
@@ -1387,30 +1387,30 @@ function openSettingsModal() {
  }
 
  function clearAllData() {
-    if (pinCode) {
+    if (AppState.pinCode) {
         const enteredPin = prompt('⚠️ Entrez votre code PIN actuel pour continuer ');
         
         if (!enteredPin) {
-            document.getElementById('pinLength').value = pinLength;
+            document.getElementById('pinLength').value = AppState.pinLength;
             return;
         }
         
-        if (enteredPin !== pinCode) {
+        if (enteredPin !== AppState.pinCode) {
             alert('❌ Code PIN incorrect');
-            document.getElementById('pinLength').value = pinLength;
+            document.getElementById('pinLength').value = AppState.pinLength;
             return;
         }
     }
      if (confirm('⚠️ ATTENTION : Cette action supprimera TOUTES vos données (transactions, objectifs, budgets). Cette action est irréversible. Êtes-vous sûr ?')) {
          if (confirm('Confirmez-vous vraiment vouloir supprimer toutes vos données ?')) {
-             transactions = [];
-             goals = [];
-             budgets = [];
-             recurringTransactions = [];
+             AppState.transactions = [];
+             AppState.goals = [];
+             AppState.budgets = [];
+             AppState.recurringTransactions = [];
              localStorage.clear();
              
-             localStorage.setItem('pinLength', pinLength);
-             localStorage.setItem('lockTimeout', lockTimeout);
+             localStorage.setItem('pinLength', AppState.pinLength);
+             localStorage.setItem('lockTimeout', AppState.lockTimeout);
              
              showNotification('✅', 'Toutes les données ont été supprimées');
              closeSettingsModal();
@@ -1424,7 +1424,7 @@ function openSettingsModal() {
  }
 
  function openCategoryModal() {
-     const expenses = transactions.filter(t => t.type === 'expense');
+     const expenses = AppState.transactions.filter(t => t.type === 'expense');
      
      if (expenses.length === 0) {
          alert('Aucune dépense à analyser');
@@ -1515,15 +1515,15 @@ function openSettingsModal() {
  });
 
  function openAllTransactionsModal() {
-     if (transactions.length === 0) {
+     if (AppState.transactions.length === 0) {
          alert('Aucune transaction à afficher');
          return;
      }
 
-     const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+     const sortedTransactions = [...AppState.transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-     const revenues = transactions.filter(t => t.type === 'revenue');
-     const expenses = transactions.filter(t => t.type === 'expense');
+     const revenues = AppState.transactions.filter(t => t.type === 'revenue');
+     const expenses = AppState.transactions.filter(t => t.type === 'expense');
      const totalRevenue = revenues.reduce((sum, t) => sum + t.amount, 0);
      const totalExpense = expenses.reduce((sum, t) => sum + t.amount, 0);
 
@@ -1607,7 +1607,7 @@ function openSettingsModal() {
  });
 
  function openTimeAnalysisModal() {
-     if (transactions.length === 0) {
+     if (AppState.transactions.length === 0) {
          alert('Aucune transaction pour analyser');
          return;
      }
@@ -1616,7 +1616,7 @@ function openSettingsModal() {
      const now = new Date();
      const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
      
-     const filteredTransactions = transactions.filter(t => {
+     const filteredTransactions = AppState.transactions.filter(t => {
          const transactionDate = new Date(t.date);
          return transactionDate >= startDate;
      });
@@ -1798,7 +1798,7 @@ function openSettingsModal() {
  });
 
  function exportToJSON() {
-     const dataStr = JSON.stringify(transactions, null, 2);
+     const dataStr = JSON.stringify(AppState.transactions, null, 2);
      const dataBlob = new Blob([dataStr], { type: 'application/json' });
      const url = URL.createObjectURL(dataBlob);
      const link = document.createElement('a');
@@ -1810,15 +1810,15 @@ function openSettingsModal() {
      showNotification('✅', 'Données exportées avec succès en JSON !');
  }
 
- function exportToCSV() {
-     if (transactions.length === 0) {
-         alert('❌ Aucune transaction à exporter');
-         return;
-     }
+function exportToCSV() {
+    if (AppState.transactions.length === 0) {
+        showNotification('❌', 'Aucune transaction à exporter', 'error');
+        return;
+    }
 
      let csv = 'Date,Description,Catégorie,Type,Montant (FCFA)\n';
      
-     transactions.forEach(t => {
+     AppState.transactions.forEach(t => {
          const date = new Date(t.date).toLocaleDateString('fr-FR');
          const description = `"${t.description.replace(/"/g, '""')}"`;
          const category = t.category;
@@ -1865,7 +1865,7 @@ function openSettingsModal() {
              const confirmMsg = `Voulez-vous importer ${validTransactions.length} transaction(s) ?\n\n⚠️ Attention : Cela remplacera vos données actuelles !`;
              
              if (confirm(confirmMsg)) {
-                 transactions = validTransactions;
+                 AppState.transactions = validTransactions;
                  saveTransactions();
                  updateAll();
                  closeExportModal();
@@ -1879,14 +1879,14 @@ function openSettingsModal() {
      event.target.value = '';
  }
 
- function openStatsModal() {
-     if (transactions.length === 0) {
-         alert('Aucune transaction pour générer des statistiques');
-         return;
-     }
+function openStatsModal() {
+    if (AppState.transactions.length === 0) {
+        showNotification('❌', 'Aucune transaction pour générer des statistiques', 'error');
+        return;
+    }
 
-     const expenses = transactions.filter(t => t.type === 'expense');
-     const revenues = transactions.filter(t => t.type === 'revenue');
+     const expenses = AppState.transactions.filter(t => t.type === 'expense');
+     const revenues = AppState.transactions.filter(t => t.type === 'revenue');
      
      const totalExpense = expenses.reduce((sum, t) => sum + t.amount, 0);
      const totalRevenue = revenues.reduce((sum, t) => sum + t.amount, 0);
@@ -1896,8 +1896,8 @@ function openSettingsModal() {
      const daysWithExpenses = uniqueDates.length;
      const avgPerDay = daysWithExpenses > 0 ? totalExpense / daysWithExpenses : 0;
 
-     const oldestDate = new Date(Math.min(...transactions.map(t => new Date(t.date))));
-     const newestDate = new Date(Math.max(...transactions.map(t => new Date(t.date))));
+     const oldestDate = new Date(Math.min(...AppState.transactions.map(t => new Date(t.date))));
+     const newestDate = new Date(Math.max(...AppState.transactions.map(t => new Date(t.date))));
      const monthsDiff = Math.max(1, (newestDate - oldestDate) / (1000 * 60 * 60 * 24 * 30));
      const avgPerMonth = totalExpense / monthsDiff;
      const avgPerWeek = totalExpense / (monthsDiff * 4);
@@ -1960,7 +1960,7 @@ function openSettingsModal() {
 
  function openEditModal(index) {
      currentEditIndex = index;
-     const transaction = transactions[index];
+     const transaction = AppState.transactions[index];
      
      document.getElementById('editDescription').value = transaction.description;
      document.getElementById('editAmount').value = transaction.amount;
@@ -1990,17 +1990,19 @@ function openSettingsModal() {
          return;
      }
 
-     transactions[currentEditIndex] = {
-         ...transactions[currentEditIndex],
+     AppState.transactions[currentEditIndex] = {
+         ...AppState.transactions[currentEditIndex],
          description,
          amount,
          category,
-         type
+         type,
+         date: new Date().toISOString()
      };
 
      saveTransactions();
      closeEditModal();
      updateAll();
+     showNotification('✅', 'Transaction modifiée avec succès');
  });
 
  document.getElementById('editModal').addEventListener('click', (e) => {
@@ -2036,7 +2038,7 @@ function openSettingsModal() {
              date: new Date().toISOString()
          };
 
-         transactions.push(transaction);
+         AppState.transactions.push(transaction);
          saveTransactions();
          form.reset();
          updateAll();
@@ -2050,11 +2052,11 @@ function openSettingsModal() {
  });
 
  function checkBudgetAlerts(category, amount) {
-     const budget = budgets.find(b => b.category === category);
+     const budget = AppState.budgets.find(b => b.category === category);
      if (!budget) return;
 
      const now = new Date();
-     const monthExpenses = transactions.filter(t => {
+     const monthExpenses = AppState.transactions.filter(t => {
          const tDate = new Date(t.date);
          return t.type === 'expense' && 
                 t.category === category &&

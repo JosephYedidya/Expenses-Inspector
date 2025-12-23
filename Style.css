@@ -1474,31 +1474,32 @@ html {
 }
 
 /* ========================================
-   ENHANCED BUTTON DESIGN SYSTEM
+   STANDARDIZED BUTTON DESIGN SYSTEM
    ======================================== */
 
-/* Enhanced Base Button Styles */
+/* Base Button Styles */
 .btn {
     position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    padding: 16px 24px;
+    gap: 8px;
+    padding: 14px 20px;
     border: none;
-    border-radius: 14px;
-    font-size: 1em;
+    border-radius: 12px;
+    font-size: 0.95em;
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     text-decoration: none;
-    min-height: 52px;
-    min-width: 48px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    min-height: 48px;
+    min-width: 44px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     background: linear-gradient(135deg, var(--accent-balance), #0077cc);
     color: white;
+    outline: none;
 }
 
 .btn::before {
@@ -1632,20 +1633,20 @@ html {
 
 /* Icon Buttons */
 .btn-icon {
-    padding: 16px;
-    min-width: 52px;
+    padding: 12px;
+    min-width: 44px;
     aspect-ratio: 1;
     border-radius: 50%;
 }
 
 .btn-icon.btn-sm {
-    padding: 12px;
-    min-width: 44px;
+    padding: 10px;
+    min-width: 40px;
 }
 
 .btn-icon.btn-lg {
-    padding: 20px;
-    min-width: 60px;
+    padding: 16px;
+    min-width: 56px;
 }
 
 /* Floating Action Button */
