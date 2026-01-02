@@ -143,9 +143,9 @@ function initSecurity() {
 function updatePinInputs() {
     const pinInputDisplay = document.getElementById('pinInputDisplay');
     if (!pinInputDisplay) return;
-    
+
     pinInputDisplay.innerHTML = '';
-    
+
     for (let i = 0; i < AppState.pinLength; i++) {
         const input = document.createElement('input');
         input.type = 'password';
@@ -154,6 +154,38 @@ function updatePinInputs() {
         input.readOnly = true;
         input.setAttribute('autocomplete', 'off');
         pinInputDisplay.appendChild(input);
+    }
+
+    // Add keyboard support for PIN input
+    document.addEventListener('keydown', handlePinKeyboardInput);
+}
+
+function handlePinKeyboardInput(event) {
+    // Allow only numeric keys (0-9) and Backspace
+    if ((event.key >= '0' && event.key <= '9') || event.key === 'Backspace') {
+        const inputs = document.querySelectorAll('.pin-digit');
+        if (!inputs.length) return;
+
+        if (event.key === 'Backspace') {
+            // Clear the last filled input
+            for (let i = inputs.length - 1; i >= 0; i--) {
+                if (inputs[i].value) {
+                    inputs[i].value = '';
+                    break;
+                }
+            }
+        } else {
+            // Fill the next empty input with the pressed key
+            for (let i = 0; i < inputs.length; i++) {
+                if (!inputs[i].value) {
+                    inputs[i].value = event.key;
+                    if (i === inputs.length - 1) {
+                        setTimeout(validatePin, 300); // Validate PIN after the last digit
+                    }
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -377,97 +409,100 @@ function togglePrivateMode() {
      }, 16);
  }
 
-// Dashboard update
+ // Dashboard update
  function updateDashboard() {
      const totalRevenue = AppState.transactions
          .filter(t => t.type === 'revenue')
          .reduce((sum, t) => sum + t.amount, 0);
-     
+
      const totalExpense = AppState.transactions
          .filter(t => t.type === 'expense')
          .reduce((sum, t) => sum + t.amount, 0);
-     
+
      const balance = totalRevenue - totalExpense;
 
      animateValue('totalRevenue', 0, totalRevenue, 800);
      animateValue('totalExpense', 0, totalExpense, 800);
      animateValue('balance', 0, balance, 800);
+
+     // Update balance color based on value
+     const balanceElement = document.getElementById('balance');
+     if (balanceElement) {
+         balanceElement.className = 'pin-amount balance';
+         if (balance >= 0) {
+             balanceElement.classList.add('revenue');
+         } else {
+             balanceElement.classList.add('expense');
+         }
+     }
  }
 
  // Chart functions
-// Optimized chart rendering with loading states
+// Optimized chart rendering
 function updateCategoryChart() {
     const canvas = document.getElementById('pieChart');
     if (!canvas) return;
-    
-    // Show loading state
-    const container = canvas.parentElement;
-    if (container) {
-        showLoading(container, 'Génération du graphique...');
-    }
-    
-    // Use chart renderer for optimization
-    ChartRenderer.queueUpdate('categoryChart', () => {
-        try {
-            const expenses = AppState.transactions.filter(t => t.type === 'expense');
-            const categoryTotals = {};
 
-            expenses.forEach(t => {
-                categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
-            });
+    try {
+        const expenses = AppState.transactions.filter(t => t.type === 'expense');
+        const categoryTotals = {};
 
-            const ctx = canvas.getContext('2d');
-            const width = canvas.width = canvas.offsetWidth * 2;
-            const height = canvas.height = canvas.offsetHeight * 2;
-            const centerX = width / 2;
-            const centerY = height / 2;
-            const radius = Math.min(width, height) / 2.5;
+        expenses.forEach(t => {
+            categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
+        });
 
-            ctx.clearRect(0, 0, width, height);
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width = canvas.offsetWidth * 2;
+        const height = canvas.height = canvas.offsetHeight * 2;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = Math.min(width, height) / 2.5;
 
-            if (Object.keys(categoryTotals).length === 0) {
-                ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary');
-                ctx.font = 'bold 32px system-ui';
+        ctx.clearRect(0, 0, width, height);
+
+        if (Object.keys(categoryTotals).length === 0) {
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary');
+            ctx.font = 'bold 32px system-ui';
+            ctx.textAlign = 'center';
+            ctx.fillText('Aucune dépense', centerX, centerY);
+            return;
+        }
+
+        const colors = ['#e60023', '#ff6b6b', '#ff9800', '#ffc107', '#4caf50', '#2196f3', '#9c27b0', '#e91e63'];
+        const total = Object.values(categoryTotals).reduce((a, b) => a + b, 0);
+        let currentAngle = -Math.PI / 2;
+
+        Object.entries(categoryTotals).forEach(([category, amount], index) => {
+            const sliceAngle = (amount / total) * 2 * Math.PI;
+
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+            ctx.closePath();
+            ctx.fillStyle = colors[index % colors.length];
+            ctx.fill();
+
+            const midAngle = currentAngle + sliceAngle / 2;
+            const labelX = centerX + Math.cos(midAngle) * (radius * 0.7);
+            const labelY = centerY + Math.sin(midAngle) * (radius * 0.7);
+
+            const percentage = ((amount / total) * 100).toFixed(0);
+            if (percentage > 5) {
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 28px system-ui';
                 ctx.textAlign = 'center';
-                ctx.fillText('Aucune dépense', centerX, centerY);
-                return;
+                ctx.fillText(percentage + '%', labelX, labelY);
             }
 
-            const colors = ['#e60023', '#ff6b6b', '#ff9800', '#ffc107', '#4caf50', '#2196f3', '#9c27b0', '#e91e63'];
-            const total = Object.values(categoryTotals).reduce((a, b) => a + b, 0);
-            let currentAngle = -Math.PI / 2;
-
-            Object.entries(categoryTotals).forEach(([category, amount], index) => {
-                const sliceAngle = (amount / total) * 2 * Math.PI;
-                
-                ctx.beginPath();
-                ctx.moveTo(centerX, centerY);
-                ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
-                ctx.closePath();
-                ctx.fillStyle = colors[index % colors.length];
-                ctx.fill();
-                
-                const midAngle = currentAngle + sliceAngle / 2;
-                const labelX = centerX + Math.cos(midAngle) * (radius * 0.7);
-                const labelY = centerY + Math.sin(midAngle) * (radius * 0.7);
-                
-                const percentage = ((amount / total) * 100).toFixed(0);
-                if (percentage > 5) {
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = 'bold 28px system-ui';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(percentage + '%', labelX, labelY);
-                }
-                
-                currentAngle += sliceAngle;
-            });
-        } catch (error) {
-            console.error('Chart rendering error:', error);
-            showError(container, 'Erreur lors du rendu du graphique');
+            currentAngle += sliceAngle;
+        });
+    } catch (error) {
+        console.error('Chart rendering error:', error);
+        const container = canvas.parentElement;
+        if (container) {
+            container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">Erreur lors du rendu du graphique</div>';
         }
-    });
-    
-    ChartRenderer.processQueue();
+    }
 }
 
  function updateTimeChart() {
@@ -668,10 +703,10 @@ function renderTransactions() {
                             </div>
                             <div class="transaction-right">
                                 <div class="transaction-amount ${t.type}">
-                                    ${t.type === 'revenue' ? '+' : '-'}${formatCurrency(t.amount)}
+                                    ${formatCurrency(t.amount)}
                                 </div>
-                                <button class="transaction-delete" 
-                                        onclick="event.stopPropagation(); deleteTransaction(${actualIndex})" 
+                                <button class="transaction-delete"
+                                        onclick="event.stopPropagation(); deleteTransaction(${actualIndex})"
                                         aria-label="Supprimer la transaction"
                                         title="Supprimer">🗑️</button>
                             </div>
@@ -727,25 +762,159 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Enhanced transactions summary with AppState
+// Enhanced transactions summary with AppState and carousel
 function updateTransactionsSummary() {
     try {
         const revenues = AppState.transactions.filter(t => t.type === 'revenue');
         const expenses = AppState.transactions.filter(t => t.type === 'expense');
         const total = AppState.transactions.length;
-        
+
         const summaryElements = {
             revenues: document.getElementById('summaryRevenues'),
             expenses: document.getElementById('summaryExpenses'),
             total: document.getElementById('summaryTotal')
         };
-        
+
         if (summaryElements.revenues) summaryElements.revenues.textContent = revenues.length;
         if (summaryElements.expenses) summaryElements.expenses.textContent = expenses.length;
         if (summaryElements.total) summaryElements.total.textContent = total;
+
+        // Initialize carousel if not already done
+        initializeTransactionsSummaryCarousel();
     } catch (error) {
         console.error('Failed to update transactions summary:', error);
     }
+}
+
+// Transactions summary carousel
+let transactionsSummaryInterval;
+let currentTransactionsSummaryIndex = 0;
+
+function initializeTransactionsSummaryCarousel() {
+    const wrapper = document.getElementById('transactionsSummaryWrapper');
+    const navigation = document.getElementById('transactionsSummaryNavigation');
+
+    if (!wrapper || !navigation) return;
+
+    // Clear existing navigation
+    navigation.innerHTML = '';
+
+    // Create navigation dots
+    const slides = wrapper.querySelectorAll('.transaction-summary-slide');
+    slides.forEach((_, index) => {
+        const dot = document.createElement('div');
+        dot.className = `transaction-summary-dot ${index === 0 ? 'active' : ''}`;
+        dot.onclick = () => goToTransactionsSummarySlide(index);
+        navigation.appendChild(dot);
+    });
+
+    // Start carousel if there are multiple slides
+    if (slides.length > 1) {
+        if (transactionsSummaryInterval) clearInterval(transactionsSummaryInterval);
+        transactionsSummaryInterval = setInterval(() => {
+            currentTransactionsSummaryIndex = (currentTransactionsSummaryIndex + 1) % slides.length;
+            updateTransactionsSummaryPosition();
+        }, 5000);
+    }
+}
+
+function goToTransactionsSummarySlide(index) {
+    currentTransactionsSummaryIndex = index;
+    updateTransactionsSummaryPosition();
+
+    if (transactionsSummaryInterval) clearInterval(transactionsSummaryInterval);
+    const slides = document.querySelectorAll('.transaction-summary-slide');
+    if (slides.length > 1) {
+        transactionsSummaryInterval = setInterval(() => {
+            currentTransactionsSummaryIndex = (currentTransactionsSummaryIndex + 1) % slides.length;
+            updateTransactionsSummaryPosition();
+        }, 5000);
+    }
+}
+
+function updateTransactionsSummaryPosition() {
+    const wrapper = document.getElementById('transactionsSummaryWrapper');
+    const dots = document.querySelectorAll('.transaction-summary-dot');
+
+    if (wrapper) {
+        const offset = currentTransactionsSummaryIndex * 100;
+        wrapper.style.transform = `translateX(-${offset}%)`;
+    }
+
+    dots.forEach((dot, index) => {
+        if (index === currentTransactionsSummaryIndex) {
+            dot.classList.add('active');
+        } else {
+            dot.classList.remove('active');
+        }
+    });
+}
+
+// Stats summary carousel
+let statsSummaryInterval;
+let currentStatsSummaryIndex = 0;
+
+function initializeStatsSummaryCarousel() {
+    const wrapper = document.getElementById('statsSummaryWrapper');
+    const navigation = document.getElementById('statsSummaryNavigation');
+
+    if (!wrapper || !navigation) return;
+
+    // Clear existing navigation
+    navigation.innerHTML = '';
+
+    // Create navigation dots
+    const slides = wrapper.querySelectorAll('.stats-summary-slide');
+    slides.forEach((_, index) => {
+        const dot = document.createElement('div');
+        dot.className = `stats-summary-dot ${index === 0 ? 'active' : ''}`;
+        dot.onclick = (event) => {
+            event.stopPropagation();
+            goToStatsSummarySlide(index);
+        };
+        navigation.appendChild(dot);
+    });
+
+    // Start carousel if there are multiple slides
+    if (slides.length > 1) {
+        if (statsSummaryInterval) clearInterval(statsSummaryInterval);
+        statsSummaryInterval = setInterval(() => {
+            currentStatsSummaryIndex = (currentStatsSummaryIndex + 1) % slides.length;
+            updateStatsSummaryPosition();
+        }, 5000);
+    }
+}
+
+function goToStatsSummarySlide(index) {
+    currentStatsSummaryIndex = index;
+    updateStatsSummaryPosition();
+
+    if (statsSummaryInterval) clearInterval(statsSummaryInterval);
+    const slides = document.querySelectorAll('.stats-summary-slide');
+    if (slides.length > 1) {
+        statsSummaryInterval = setInterval(() => {
+            currentStatsSummaryIndex = (currentStatsSummaryIndex + 1) % slides.length;
+            updateStatsSummaryPosition();
+        }, 5000);
+    }
+}
+
+function updateStatsSummaryPosition() {
+    const wrapper = document.getElementById('statsSummaryWrapper');
+    const dots = document.querySelectorAll('.stats-summary-dot');
+
+    if (wrapper) {
+        const offset = currentStatsSummaryIndex * 100;
+        wrapper.style.transform = `translateX(-${offset}%)`;
+    }
+
+    dots.forEach((dot, index) => {
+        if (index === currentStatsSummaryIndex) {
+            dot.classList.add('active');
+        } else {
+            dot.classList.remove('active');
+        }
+    });
 }
 
  // Financial tips
@@ -872,12 +1041,12 @@ function updateTransactionsSummary() {
  function updateTipPosition() {
      const wrapper = document.getElementById('tipsWrapper');
      const dots = document.querySelectorAll('.tip-dot');
-     
+
      if (wrapper) {
          const offset = AppState.currentTipIndex * 100;
          wrapper.style.transform = `translateX(-${offset}%)`;
      }
-     
+
      dots.forEach((dot, index) => {
          if (index === AppState.currentTipIndex) {
              dot.classList.add('active');
@@ -886,6 +1055,21 @@ function updateTransactionsSummary() {
          }
      });
  }
+
+ function goToTransactionSlide(index) {
+     currentTransactionSlide = index;
+     updateTransactionSlidePosition();
+
+     if (transactionInterval) clearInterval(transactionInterval);
+     const totalSlides = Math.ceil(AppState.transactions.length / 3);
+     if (totalSlides > 1) {
+         transactionInterval = setInterval(() => {
+             currentTransactionSlide = (currentTransactionSlide + 1) % totalSlides;
+             updateTransactionSlidePosition();
+         }, 5000);
+     }
+ }
+
 
  // Goals functions
  function updateGoals() {
@@ -1198,7 +1382,9 @@ function updateTransactionsSummary() {
      }
 
      const expenses = AppState.transactions.filter(t => t.type === 'expense');
+     const revenues = AppState.transactions.filter(t => t.type === 'revenue');
      const totalExpense = expenses.reduce((sum, t) => sum + t.amount, 0);
+     const totalRevenue = revenues.reduce((sum, t) => sum + t.amount, 0);
 
      const dates = expenses.map(t => new Date(t.date).toDateString());
      const uniqueDates = [...new Set(dates)];
@@ -1207,11 +1393,60 @@ function updateTransactionsSummary() {
      const avgPerDay = daysWithExpenses > 0 ? totalExpense / daysWithExpenses : 0;
      document.getElementById('avgPerDay').textContent = formatCurrency(avgPerDay);
 
-     const oldestDate = new Date(Math.min(...expenses.map(t => new Date(t.date))));
-     const newestDate = new Date(Math.max(...expenses.map(t => new Date(t.date))));
+     const oldestDate = new Date(Math.min(...AppState.transactions.map(t => new Date(t.date))));
+     const newestDate = new Date(Math.max(...AppState.transactions.map(t => new Date(t.date))));
      const monthsDiff = Math.max(1, (newestDate - oldestDate) / (1000 * 60 * 60 * 24 * 30));
      const avgPerMonth = totalExpense / monthsDiff;
      document.getElementById('avgPerMonth').textContent = formatCurrency(avgPerMonth);
+
+     // Calculate additional stats for carousel
+     const avgRevenuePerDay = daysWithExpenses > 0 ? totalRevenue / daysWithExpenses : 0;
+     const avgRevenuePerMonth = totalRevenue / monthsDiff;
+     const totalTransactions = AppState.transactions.length;
+     const avgTransactionAmount = totalTransactions > 0 ? (totalRevenue + totalExpense) / totalTransactions : 0;
+
+     // Update stats summary carousel slides
+     const statsSlide1 = document.querySelector('.stats-summary-slide:nth-child(1)');
+     const statsSlide2 = document.querySelector('.stats-summary-slide:nth-child(2)');
+
+     if (statsSlide1) {
+         statsSlide1.innerHTML = `
+             <div class="transaction-summary-box">
+                 <div class="transaction-summary-label">Dépense/Jour</div>
+                 <div class="transaction-summary-value expense-color">${formatCurrency(avgPerDay)}</div>
+             </div>
+             <div class="transaction-summary-box">
+                 <div class="transaction-summary-label">Revenu/Jour</div>
+                 <div class="transaction-summary-value revenue-color">${formatCurrency(avgRevenuePerDay)}</div>
+             </div>
+             <div class="transaction-summary-box">
+                 <div class="transaction-summary-label">Total Transactions</div>
+                 <div class="transaction-summary-value total-color">${totalTransactions}</div>
+             </div>
+         `;
+     }
+
+     if (statsSlide2) {
+         statsSlide2.innerHTML = `
+             <div class="transaction-summary-box">
+                 <div class="transaction-summary-label">Dépense/Mois</div>
+                 <div class="transaction-summary-value expense-color">${formatCurrency(avgPerMonth)}</div>
+             </div>
+             <div class="transaction-summary-box">
+                 <div class="transaction-summary-label">Revenu/Mois</div>
+                 <div class="transaction-summary-value revenue-color">${formatCurrency(avgRevenuePerMonth)}</div>
+             </div>
+             <div class="transaction-summary-box">
+                 <div class="transaction-summary-label">Montant Moyen</div>
+                 <div class="transaction-summary-value total-color">${formatCurrency(avgTransactionAmount)}</div>
+             </div>
+         `;
+     }
+
+     // Initialize carousel after DOM update
+     setTimeout(() => {
+         initializeStatsSummaryCarousel();
+     }, 50);
  }
 
  // Filter functions
@@ -1253,7 +1488,7 @@ function updateTransactionsSummary() {
 
  function renderFilteredTransactions() {
      const container = document.getElementById('transactionsContainer');
-     
+
      if (AppState.filteredTransactions.length === 0) {
          container.innerHTML = '<div class="masonry-item"><div class="form-card"><div class="empty-state"><div class="empty-state-icon">🔍</div><p>Aucun résultat</p></div></div></div>';
          return;
@@ -1273,7 +1508,7 @@ function updateTransactionsSummary() {
                          </div>
                          <div class="transaction-right">
                              <div class="transaction-amount ${t.type}">
-                                 ${t.type === 'revenue' ? '+' : '-'}${formatCurrency(t.amount)}
+                                 ${formatCurrency(t.amount)}
                              </div>
                              <button class="transaction-delete" onclick="event.stopPropagation(); deleteTransaction(${index})" aria-label="Supprimer">🗑️</button>
                          </div>
@@ -1547,57 +1782,93 @@ function openSettingsModal() {
              </div>
          </div>
          <h3 style="margin: 20px 0 15px 0; color: var(--text-primary);">Liste Complète des Transactions</h3>
-         <div style="max-height: 400px; overflow-y: auto;">
+         <div id="transactionsContainer" style="overflow: hidden; position: relative; height: 400px;">
+             <div class="transactions-wrapper" id="transactionsWrapper" style="display: flex; transition: transform 0.6s ease-in-out; height: 100%;">
      `;
 
-     sortedTransactions.forEach(transaction => {
-         const date = new Date(transaction.date);
-         const formattedDate = date.toLocaleDateString('fr-FR', { 
-             day: '2-digit', 
-             month: 'short', 
-             year: 'numeric',
-             hour: '2-digit',
-             minute: '2-digit'
-         });
+     // Group transactions into slides (3 transactions per slide)
+     const transactionsPerSlide = 3;
+     const totalSlides = Math.ceil(sortedTransactions.length / transactionsPerSlide);
 
-         const isRevenue = transaction.type === 'revenue';
-         const amountColor = isRevenue ? 'var(--accent-revenue)' : 'var(--accent-expense)';
-         const amountPrefix = isRevenue ? '+' : '-';
+     for (let slideIndex = 0; slideIndex < totalSlides; slideIndex++) {
+         const startIndex = slideIndex * transactionsPerSlide;
+         const endIndex = Math.min(startIndex + transactionsPerSlide, sortedTransactions.length);
+         const slideTransactions = sortedTransactions.slice(startIndex, endIndex);
 
-         modalHTML += `
-             <div class="expense-list-item">
-                 <div class="expense-info">
-                     <div class="expense-desc">${transaction.description}</div>
-                     <div class="expense-meta">
-                         <div class="expense-date">
-                             <span>📅</span>
-                             <span>${formattedDate}</span>
-                         </div>
-                         <div class="expense-cat">
-                             <span>🏷️</span>
-                             <span>${transaction.category}</span>
-                         </div>
-                         <div class="expense-cat">
-                             <span>${isRevenue ? '💰' : '💳'}</span>
-                             <span>${isRevenue ? 'Revenu' : 'Dépense'}</span>
+         modalHTML += `<div class="transaction-slide" style="min-width: 100%; flex: 0 0 100%; padding: 10px; box-sizing: border-box;">`;
+
+         slideTransactions.forEach(transaction => {
+             const date = new Date(transaction.date);
+             const formattedDate = date.toLocaleDateString('fr-FR', {
+                 day: '2-digit',
+                 month: 'short',
+                 year: 'numeric',
+                 hour: '2-digit',
+                 minute: '2-digit'
+             });
+
+             const isRevenue = transaction.type === 'revenue';
+             const amountColor = isRevenue ? 'var(--accent-revenue)' : 'var(--accent-expense)';
+             const amountPrefix = isRevenue ? '+' : '-';
+
+             modalHTML += `
+                 <div class="expense-list-item">
+                     <div class="expense-info">
+                         <div class="expense-desc">${transaction.description}</div>
+                         <div class="expense-meta">
+                             <div class="expense-date">
+                                 <span>📅</span>
+                                 <span>${formattedDate}</span>
+                             </div>
+                             <div class="expense-cat">
+                                 <span>🏷️</span>
+                                 <span>${transaction.category}</span>
+                             </div>
+                             <div class="expense-cat">
+                                 <span>${isRevenue ? '💰' : '💳'}</span>
+                                 <span>${isRevenue ? 'Revenu' : 'Dépense'}</span>
+                             </div>
                          </div>
                      </div>
+                     <div class="expense-amount-display" style="color: ${amountColor};">
+                         ${amountPrefix}${formatCurrency(transaction.amount)}
+                     </div>
                  </div>
-                 <div class="expense-amount-display" style="color: ${amountColor};">
-                     ${amountPrefix}${formatCurrency(transaction.amount)}
-                 </div>
+             `;
+         });
+
+         modalHTML += '</div>';
+     }
+
+     modalHTML += `
              </div>
-         `;
-     });
+         </div>
+         <div class="transactions-navigation" id="transactionsNavigation" style="display: flex; justify-content: center; gap: 8px; padding: 15px 0;">
+     `;
+
+     for (let i = 0; i < totalSlides; i++) {
+         modalHTML += `<div class="transaction-dot ${i === 0 ? 'active' : ''}" onclick="goToTransactionSlide(${i})"></div>`;
+     }
 
      modalHTML += '</div>';
 
      document.getElementById('allTransactionsModalContent').innerHTML = modalHTML;
      document.getElementById('allTransactionsModal').classList.add('active');
+
+     // Initialize transaction carousel
+     currentTransactionSlide = 0;
+     if (totalSlides > 1) {
+         startTransactionCarousel();
+     }
  }
 
  function closeAllTransactionsModal() {
      document.getElementById('allTransactionsModal').classList.remove('active');
+     // Clear carousel interval when closing modal
+     if (transactionInterval) {
+         clearInterval(transactionInterval);
+         transactionInterval = null;
+     }
  }
 
  document.getElementById('allTransactionsModal').addEventListener('click', (e) => {
@@ -1605,6 +1876,60 @@ function openSettingsModal() {
          closeAllTransactionsModal();
      }
  });
+
+ // Transaction carousel variables
+ let transactionInterval;
+ let currentTransactionSlide = 0;
+
+function startTransactionCarousel() {
+    const wrapper = document.getElementById('transactionsWrapper');
+    const navigation = document.getElementById('transactionsNavigation');
+
+    if (!wrapper || !navigation) return;
+
+    // Clear existing interval
+    if (transactionInterval) clearInterval(transactionInterval);
+
+    // Clear existing navigation
+    navigation.innerHTML = '';
+
+    // Create navigation dots
+    const slides = wrapper.querySelectorAll('.transaction-slide');
+    slides.forEach((_, index) => {
+        const dot = document.createElement('div');
+        dot.className = `transaction-dot ${index === 0 ? 'active' : ''}`;
+        dot.onclick = () => goToTransactionSlide(index);
+        navigation.appendChild(dot);
+    });
+
+    // Start carousel if there are multiple slides
+    if (slides.length > 1) {
+        transactionInterval = setInterval(() => {
+            currentTransactionSlide = (currentTransactionSlide + 1) % slides.length;
+            updateTransactionSlidePosition();
+        }, 5000);
+    }
+}
+
+
+
+ function updateTransactionSlidePosition() {
+     const wrapper = document.getElementById('transactionsWrapper');
+     const dots = document.querySelectorAll('.transaction-dot');
+
+     if (wrapper) {
+         const offset = currentTransactionSlide * 100;
+         wrapper.style.transform = `translateX(-${offset}%)`;
+     }
+
+     dots.forEach((dot, index) => {
+         if (index === currentTransactionSlide) {
+             dot.classList.add('active');
+         } else {
+             dot.classList.remove('active');
+         }
+     });
+ }
 
  function openTimeAnalysisModal() {
      if (AppState.transactions.length === 0) {
@@ -1961,12 +2286,16 @@ function openStatsModal() {
  function openEditModal(index) {
      currentEditIndex = index;
      const transaction = AppState.transactions[index];
-     
+
      document.getElementById('editDescription').value = transaction.description;
      document.getElementById('editAmount').value = transaction.amount;
      document.getElementById('editCategory').value = transaction.category;
      document.getElementById('editType').value = transaction.type;
-     
+
+     // Set initial color based on type
+     const editAmountInput = document.getElementById('editAmount');
+     editAmountInput.style.color = transaction.type === 'revenue' ? 'var(--accent-revenue)' : 'var(--accent-expense)';
+
      document.getElementById('editModal').classList.add('active');
  }
 
@@ -2014,11 +2343,13 @@ function openStatsModal() {
  // Form submission
  const form = document.getElementById('transactionForm');
  const buttons = document.querySelectorAll('.btn-group button');
+ const amountInput = document.getElementById('amount');
 
+ // Add click handlers for button color indication
  buttons.forEach(button => {
      button.addEventListener('click', (e) => {
          e.preventDefault();
-         
+
          const description = document.getElementById('description').value.trim();
          const amount = parseFloat(document.getElementById('amount').value);
          const category = document.getElementById('category').value;
@@ -2041,12 +2372,27 @@ function openStatsModal() {
          AppState.transactions.push(transaction);
          saveTransactions();
          form.reset();
+         // Keep amount input color after form reset to indicate last selected type
+         amountInput.style.color = type === 'revenue' ? 'var(--accent-revenue)' : 'var(--accent-expense)';
          updateAll();
-         
+
          showNotification(type === 'revenue' ? '💰' : '💳', `${type === 'revenue' ? 'Revenu' : 'Dépense'} ajouté : ${formatCurrency(amount)}`);
-         
+
          if (type === 'expense') {
              checkBudgetAlerts(category, amount);
+         }
+     });
+
+     // Add color indication on button hover/click
+     button.addEventListener('mouseenter', () => {
+         const type = button.dataset.type;
+         amountInput.style.color = type === 'revenue' ? 'var(--accent-revenue)' : 'var(--accent-expense)';
+     });
+
+     button.addEventListener('mouseleave', () => {
+         // Only reset color if no type was selected (no persistent color)
+         if (!amountInput.style.color || amountInput.style.color === '') {
+             amountInput.style.color = '';
          }
      });
  });

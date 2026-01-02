@@ -40,7 +40,7 @@
                 <button class="nav-btn btn-icon" onclick="openSettingsModal()" title="Paramètres" aria-label="Paramètres">
                     <span>⚙️</span>
                 </button>
-                <button class="export-btn btn btn-primary" onclick="openExportModal()" aria-label="Exporter les données">
+                <button class="export-btn btn btn-primary" onclick="openExportModal()" aria-label="Exporter les données" style="margin-bottom: 25px;">
                     <span>📤</span>
                     <span>Export</span>
                 </button>
@@ -202,19 +202,28 @@
                 <div class="form-card" onclick="openAllTransactionsModal()" style="cursor: pointer;">
                     <h2>📊 Toutes les Transactions</h2>
                     <div class="chart-container">
-                        <div class="all-transactions-summary">
-                            <div class="transaction-summary-box">
-                                <div class="transaction-summary-label">Revenus</div>
-                                <div class="transaction-summary-value revenue-color" id="summaryRevenues">0</div>
+                        <div id="transactionsSummaryContainer">
+                            <div class="transactions-summary-wrapper" id="transactionsSummaryWrapper">
+                                <div class="transaction-summary-slide">
+                                    <div class="transaction-summary-box">
+                                        <div class="transaction-summary-label">Revenus</div>
+                                        <div class="transaction-summary-value revenue-color" id="summaryRevenues">0</div>
+                                    </div>
+                                </div>
+                                <div class="transaction-summary-slide">
+                                    <div class="transaction-summary-box">
+                                        <div class="transaction-summary-label">Dépenses</div>
+                                        <div class="transaction-summary-value expense-color" id="summaryExpenses">0</div>
+                                    </div>
+                                </div>
+                                <div class="transaction-summary-slide">
+                                    <div class="transaction-summary-box">
+                                        <div class="transaction-summary-label">Total</div>
+                                        <div class="transaction-summary-value total-color" id="summaryTotal">0</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="transaction-summary-box">
-                                <div class="transaction-summary-label">Dépenses</div>
-                                <div class="transaction-summary-value expense-color" id="summaryExpenses">0</div>
-                            </div>
-                            <div class="transaction-summary-box">
-                                <div class="transaction-summary-label">Total</div>
-                                <div class="transaction-summary-value total-color" id="summaryTotal">0</div>
-                            </div>
+                            <div class="transactions-summary-navigation" id="transactionsSummaryNavigation"></div>
                         </div>
                         <div style="text-align: center; color: var(--text-secondary); font-size: 0.9em; margin-top: 10px;">
                             Cliquez pour voir tous les détails 📋
@@ -273,7 +282,7 @@
                             <option value="all">Toutes les catégories</option>
                         </select>
                     </div>
-                    <button class="btn btn-primary btn-lg full-width" onclick="applyFilters()" aria-label="Appliquer les filtres">
+                    <button class="btn btn-primary btn-lg full-width" onclick="applyFilters()" aria-label="Appliquer les filtres" style="margin-bottom: 15px;">
                         <span class="btn-icon">🔍</span>
                         <span class="btn-text">Appliquer les filtres</span>
                     </button>
@@ -304,17 +313,40 @@
                 <div class="form-card" onclick="openStatsModal()" style="cursor: pointer;">
                     <h2>📈 Statistiques Avancées</h2>
                     <div class="chart-container">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                            <div class="transaction-summary-box">
-                                <div class="transaction-summary-label">Dépense/Jour</div>
-                                <div class="transaction-summary-value expense-color" id="avgPerDay">0 FCFA</div>
+                        <div id="statsSummaryContainer">
+                            <div class="stats-summary-wrapper" id="statsSummaryWrapper">
+                                <div class="stats-summary-slide">
+                                    <div class="transaction-summary-box">
+                                        <div class="transaction-summary-label">Dépense/Jour</div>
+                                        <div class="transaction-summary-value expense-color" id="avgPerDay">0 FCFA</div>
+                                    </div>
+                                    <div class="transaction-summary-box">
+                                        <div class="transaction-summary-label">Revenu/Jour</div>
+                                        <div class="transaction-summary-value revenue-color">0 FCFA</div>
+                                    </div>
+                                    <div class="transaction-summary-box">
+                                        <div class="transaction-summary-label">Total Transactions</div>
+                                        <div class="transaction-summary-value total-color" id="totalTransactions">0</div>
+                                    </div>
+                                </div>
+                                <div class="stats-summary-slide">
+                                    <div class="transaction-summary-box">
+                                        <div class="transaction-summary-label">Dépense/Mois</div>
+                                        <div class="transaction-summary-value expense-color" id="avgPerMonth">0 FCFA</div>
+                                    </div>
+                                    <div class="transaction-summary-box">
+                                        <div class="transaction-summary-label">Revenu/Mois</div>
+                                        <div class="transaction-summary-value revenue-color">0 FCFA</div>
+                                    </div>
+                                    <div class="transaction-summary-box">
+                                        <div class="transaction-summary-label">Montant Moyen</div>
+                                        <div class="transaction-summary-value total-color">0 FCFA</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="transaction-summary-box">
-                                <div class="transaction-summary-label">Dépense/Mois</div>
-                                <div class="transaction-summary-value expense-color" id="avgPerMonth">0 FCFA</div>
-                            </div>
+                            <div class="stats-summary-navigation" id="statsSummaryNavigation"></div>
                         </div>
-                        <div style="text-align: center; color: var(--text-secondary); font-size: 0.9em;">
+                        <div style="text-align: center; color: var(--text-secondary); font-size: 0.9em; margin-top: 10px;">
                             Cliquez pour plus de statistiques 📊
                         </div>
                     </div>
