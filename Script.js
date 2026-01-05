@@ -7,6 +7,9 @@ const AppState = {
     goals: JSON.parse(localStorage.getItem('goals')) || [],
     budgets: JSON.parse(localStorage.getItem('budgets')) || [],
     recurringTransactions: JSON.parse(localStorage.getItem('recurringTransactions')) || [],
+    debts: JSON.parse(localStorage.getItem('debts')) || [],
+    investments: JSON.parse(localStorage.getItem('investments')) || [],
+    subscriptions: JSON.parse(localStorage.getItem('subscriptions')) || [],
     filteredTransactions: [],
     
     // UI State
@@ -71,6 +74,33 @@ function saveRecurring() {
     } catch (error) {
         console.error('Failed to save recurring transactions:', error);
         showNotification('❌', 'Erreur lors de la sauvegarde des récurrences', 'error');
+    }
+}
+
+function saveDebts() {
+    try {
+        localStorage.setItem('debts', JSON.stringify(AppState.debts));
+    } catch (error) {
+        console.error('Failed to save debts:', error);
+        showNotification('❌', 'Erreur lors de la sauvegarde des dettes', 'error');
+    }
+}
+
+function saveInvestments() {
+    try {
+        localStorage.setItem('investments', JSON.stringify(AppState.investments));
+    } catch (error) {
+        console.error('Failed to save investments:', error);
+        showNotification('❌', 'Erreur lors de la sauvegarde des investissements', 'error');
+    }
+}
+
+function saveSubscriptions() {
+    try {
+        localStorage.setItem('subscriptions', JSON.stringify(AppState.subscriptions));
+    } catch (error) {
+        console.error('Failed to save subscriptions:', error);
+        showNotification('❌', 'Erreur lors de la sauvegarde des abonnements', 'error');
     }
 }
 
@@ -509,13 +539,13 @@ function updateCategoryChart() {
      const days = parseInt(document.getElementById('timeFilter').value);
      const canvas = document.getElementById('lineChart');
      if (!canvas) return;
-     
+
      const ctx = canvas.getContext('2d');
      const width = canvas.width = canvas.offsetWidth * 2;
      const height = canvas.height = 400;
 
      ctx.clearRect(0, 0, width, height);
-     
+
      if (AppState.transactions.length === 0) {
          ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary');
          ctx.font = 'bold 32px system-ui';
@@ -526,7 +556,7 @@ function updateCategoryChart() {
 
      const now = new Date();
      const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-     
+
      const filteredTransactions = AppState.transactions.filter(t => {
          const transactionDate = new Date(t.date);
          return transactionDate >= startDate;
@@ -547,7 +577,7 @@ function updateCategoryChart() {
      for (let i = 0; i < periods; i++) {
          const periodStart = new Date(startDate.getTime() + i * periodLength * 24 * 60 * 60 * 1000);
          const periodEnd = new Date(startDate.getTime() + (i + 1) * periodLength * 24 * 60 * 60 * 1000);
-         
+
          const periodTransactions = filteredTransactions.filter(t => {
              const tDate = new Date(t.date);
              return tDate >= periodStart && tDate < periodEnd;
@@ -556,7 +586,7 @@ function updateCategoryChart() {
          const revenue = periodTransactions
              .filter(t => t.type === 'revenue')
              .reduce((sum, t) => sum + t.amount, 0);
-         
+
          const expense = periodTransactions
              .filter(t => t.type === 'expense')
              .reduce((sum, t) => sum + t.amount, 0);
@@ -577,89 +607,123 @@ function updateCategoryChart() {
      const chartWidth = width - padding * 2;
      const chartHeight = height - padding * 2;
      const maxValue = Math.max(...periodData.map(p => Math.max(p.revenue, p.expense)));
-
-     // Draw axes
-     ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border-color');
-     ctx.lineWidth = 2;
-     ctx.beginPath();
-     ctx.moveTo(padding, padding);
-     ctx.lineTo(padding, height - padding);
-     ctx.lineTo(width - padding, height - padding);
-     ctx.stroke();
-
-     // Draw grid
-     ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border-color');
-     ctx.lineWidth = 1;
-     ctx.globalAlpha = 0.3;
-     for (let i = 0; i <= 5; i++) {
-         const y = padding + (chartHeight / 5) * i;
-         ctx.beginPath();
-         ctx.moveTo(padding, y);
-         ctx.lineTo(width - padding, y);
-         ctx.stroke();
-     }
-     ctx.globalAlpha = 1;
-
      const stepX = chartWidth / (periods - 1);
 
-     // Draw revenue line
-     ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-revenue');
-     ctx.lineWidth = 4;
-     ctx.beginPath();
-     periodData.forEach((data, i) => {
-         const x = padding + i * stepX;
-         const y = height - padding - (data.revenue / maxValue) * chartHeight;
-         if (i === 0) ctx.moveTo(x, y);
-         else ctx.lineTo(x, y);
-     });
-     ctx.stroke();
+     // Animation variables
+     let animationProgress = 0;
+     const animationDuration = 1000; // 1 second
+     let animationStartTime = null;
 
-     // Draw expense line
-     ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-expense');
-     ctx.lineWidth = 4;
-     ctx.beginPath();
-     periodData.forEach((data, i) => {
-         const x = padding + i * stepX;
-         const y = height - padding - (data.expense / maxValue) * chartHeight;
-         if (i === 0) ctx.moveTo(x, y);
-         else ctx.lineTo(x, y);
-     });
-     ctx.stroke();
+     function drawChart(progress) {
+         ctx.clearRect(0, 0, width, height);
 
-     // Draw points and labels
-     periodData.forEach((data, i) => {
-         const x = padding + i * stepX;
-         
-         const yRev = height - padding - (data.revenue / maxValue) * chartHeight;
-         ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-revenue');
+         // Draw axes
+         ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border-color');
+         ctx.lineWidth = 2;
          ctx.beginPath();
-         ctx.arc(x, yRev, 8, 0, 2 * Math.PI);
-         ctx.fill();
+         ctx.moveTo(padding, padding);
+         ctx.lineTo(padding, height - padding);
+         ctx.lineTo(width - padding, height - padding);
+         ctx.stroke();
 
-         const yExp = height - padding - (data.expense / maxValue) * chartHeight;
-         ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-expense');
+         // Draw grid
+         ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border-color');
+         ctx.lineWidth = 1;
+         ctx.globalAlpha = 0.3;
+         for (let i = 0; i <= 5; i++) {
+             const y = padding + (chartHeight / 5) * i;
+             ctx.beginPath();
+             ctx.moveTo(padding, y);
+             ctx.lineTo(width - padding, y);
+             ctx.stroke();
+         }
+         ctx.globalAlpha = 1;
+
+         // Calculate how many points to draw based on progress
+         const pointsToDraw = Math.ceil(progress * periods);
+
+         // Draw revenue line with animation
+         ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-revenue');
+         ctx.lineWidth = 4;
          ctx.beginPath();
-         ctx.arc(x, yExp, 8, 0, 2 * Math.PI);
-         ctx.fill();
+         for (let i = 0; i < pointsToDraw && i < periods; i++) {
+             const x = padding + i * stepX;
+             const y = height - padding - (periodData[i].revenue / maxValue) * chartHeight;
+             if (i === 0) ctx.moveTo(x, y);
+             else ctx.lineTo(x, y);
+         }
+         ctx.stroke();
 
-         ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary');
-         ctx.font = 'bold 20px system-ui';
-         ctx.textAlign = 'center';
-         ctx.fillText(data.label, x, height - padding + 30);
-     });
+         // Draw expense line with animation
+         ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-expense');
+         ctx.lineWidth = 4;
+         ctx.beginPath();
+         for (let i = 0; i < pointsToDraw && i < periods; i++) {
+             const x = padding + i * stepX;
+             const y = height - padding - (periodData[i].expense / maxValue) * chartHeight;
+             if (i === 0) ctx.moveTo(x, y);
+             else ctx.lineTo(x, y);
+         }
+         ctx.stroke();
 
-     // Draw legend
-     ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-revenue');
-     ctx.fillRect(padding, padding - 40, 30, 10);
-     ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-primary');
-     ctx.font = 'bold 22px system-ui';
-     ctx.textAlign = 'left';
-     ctx.fillText('Revenus', padding + 40, padding - 30);
+         // Draw points and labels (only for drawn points)
+         for (let i = 0; i < pointsToDraw && i < periods; i++) {
+             const x = padding + i * stepX;
 
-     ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-expense');
-     ctx.fillRect(padding + 200, padding - 40, 30, 10);
-     ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-primary');
-     ctx.fillText('Dépenses', padding + 240, padding - 30);
+             const yRev = height - padding - (periodData[i].revenue / maxValue) * chartHeight;
+             ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-revenue');
+             ctx.beginPath();
+             ctx.arc(x, yRev, 8, 0, 2 * Math.PI);
+             ctx.fill();
+
+             const yExp = height - padding - (periodData[i].expense / maxValue) * chartHeight;
+             ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-expense');
+             ctx.beginPath();
+             ctx.arc(x, yExp, 8, 0, 2 * Math.PI);
+             ctx.fill();
+
+             ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary');
+             ctx.font = 'bold 20px system-ui';
+             ctx.textAlign = 'center';
+             ctx.fillText(periodData[i].label, x, height - padding + 30);
+         }
+
+         // Draw legend (only when animation is complete)
+         if (progress >= 1) {
+             ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-revenue');
+             ctx.fillRect(padding, padding - 40, 30, 10);
+             ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-primary');
+             ctx.font = 'bold 22px system-ui';
+             ctx.textAlign = 'left';
+             ctx.fillText('Revenus', padding + 40, padding - 30);
+
+             ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-expense');
+             ctx.fillRect(padding + 200, padding - 40, 30, 10);
+             ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-primary');
+             ctx.fillText('Dépenses', padding + 240, padding - 30);
+         }
+     }
+
+     function animate(currentTime) {
+         if (!animationStartTime) {
+             animationStartTime = currentTime;
+         }
+
+         const elapsed = currentTime - animationStartTime;
+         animationProgress = Math.min(elapsed / animationDuration, 1);
+
+         // Use easing function for smoother animation
+         const easedProgress = 1 - Math.pow(1 - animationProgress, 3);
+
+         drawChart(easedProgress);
+
+         if (animationProgress < 1) {
+             requestAnimationFrame(animate);
+         }
+     }
+
+     // Start animation
+     requestAnimationFrame(animate);
  }
 
  document.getElementById('timeFilter').addEventListener('change', updateTimeChart);
@@ -1372,6 +1436,578 @@ function updateStatsSummaryPosition() {
      closeRecurringModal();
      updateRecurring();
  });
+
+ // ==================== DEBTS & LOANS ====================
+ function updateDebts() {
+     const container = document.getElementById('debtsContainer');
+     
+     if (AppState.debts.length === 0) {
+         container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💳</div><p>Aucun prêt/en dette</p></div>';
+         return;
+     }
+
+     const now = new Date();
+     let debtsHTML = '';
+     
+     // Separate debts by type
+     const owedToMe = AppState.debts.filter(d => d.type === 'owed_to_me');
+     const iOwe = AppState.debts.filter(d => d.type === 'i_owe');
+     
+     const totalOwedToMe = owedToMe.reduce((sum, d) => sum + d.amount, 0);
+     const totalIOwe = iOwe.reduce((sum, d) => sum + d.amount, 0);
+
+     debtsHTML += `
+         <div class="stat-grid" style="margin-bottom: 20px;">
+             <div class="stat-box">
+                 <div class="stat-label">On me doit</div>
+                 <div class="stat-value" style="color: var(--accent-revenue);">${formatCurrency(totalOwedToMe)}</div>
+             </div>
+             <div class="stat-box">
+                 <div class="stat-label">Je dois</div>
+                 <div class="stat-value" style="color: var(--accent-expense);">${formatCurrency(totalIOwe)}</div>
+             </div>
+         </div>
+     `;
+
+     AppState.debts.forEach((debt, index) => {
+         const dueDate = new Date(debt.dueDate);
+         const daysUntilDue = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+         const isOverdue = daysUntilDue < 0;
+         
+         let statusClass = 'budget-remaining';
+         let statusText = `${daysUntilDue > 0 ? daysUntilDue + ' jours' : 'En retard'}`;
+         
+         if (isOverdue) {
+             statusClass = 'budget-warning';
+             statusText = 'En retard';
+         } else if (daysUntilDue <= 7) {
+             statusClass = 'budget-warning';
+         }
+
+         const typeLabel = debt.type === 'owed_to_me' ? 'On me doit' : 'Je dois';
+         const typeColor = debt.type === 'owed_to_me' ? 'var(--accent-revenue)' : 'var(--accent-expense)';
+
+         debtsHTML += `
+             <div class="budget-item">
+                 <div class="budget-header">
+                     <div class="budget-category" style="color: ${typeColor};">${debt.description}</div>
+                     <button class="goal-delete" onclick="deleteDebt(${index})">🗑️</button>
+                 </div>
+                 <div class="budget-status">
+                     <span style="color: ${typeColor}; font-weight: 600;">${typeLabel}</span>
+                     <span class="${statusClass}">${statusText}</span>
+                 </div>
+                 <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.85em; color: var(--text-secondary);">
+                     <span>👤 ${debt.person}</span>
+                     <span>📅 ${dueDate.toLocaleDateString('fr-FR')}</span>
+                 </div>
+                 <div class="goal-progress-bar">
+                     <div class="goal-progress-fill" style="width: 100%; background: ${typeColor};">
+                         ${formatCurrency(debt.amount)}
+                     </div>
+                 </div>
+             </div>
+         `;
+     });
+
+     container.innerHTML = debtsHTML;
+ }
+
+ function deleteDebt(index) {
+     if (confirm('Supprimer cette dette ?')) {
+         AppState.debts.splice(index, 1);
+         saveDebts();
+         updateDebts();
+     }
+ }
+
+ function openDebtModal() {
+     document.getElementById('debtModal').classList.add('active');
+     // Set default date to 30 days from now
+     const defaultDate = new Date();
+     defaultDate.setDate(defaultDate.getDate() + 30);
+     document.getElementById('debtDueDate').value = defaultDate.toISOString().split('T')[0];
+ }
+
+ function closeDebtModal() {
+     document.getElementById('debtModal').classList.remove('active');
+     document.getElementById('debtForm').reset();
+ }
+
+ document.getElementById('debtModal').addEventListener('click', (e) => {
+     if (e.target.id === 'debtModal') {
+         closeDebtModal();
+     }
+ });
+
+ document.getElementById('debtForm').addEventListener('submit', (e) => {
+     e.preventDefault();
+     
+     const description = document.getElementById('debtDescription').value.trim();
+     const amount = parseFloat(document.getElementById('debtAmount').value);
+     const type = document.getElementById('debtType').value;
+     const person = document.getElementById('debtPerson').value.trim();
+     const dueDate = document.getElementById('debtDueDate').value;
+     const interest = parseFloat(document.getElementById('debtInterest').value) || 0;
+
+     if (!description || !amount || amount <= 0 || !person || !dueDate) {
+         alert('Veuillez remplir tous les champs correctement');
+         return;
+     }
+
+     const debt = {
+         id: Date.now(),
+         description,
+         amount,
+         type,
+         person,
+         dueDate,
+         interest,
+         createdAt: new Date().toISOString()
+     };
+
+     AppState.debts.push(debt);
+     saveDebts();
+     closeDebtModal();
+     updateDebts();
+     showNotification('💳', `Dette/emprunt "${description}" ajouté avec succès`);
+ });
+
+ // ==================== INVESTMENTS ====================
+ function updateInvestments() {
+     const container = document.getElementById('investmentsContainer');
+     
+     if (AppState.investments.length === 0) {
+         container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📈</div><p>Aucun investissement</p></div>';
+         return;
+     }
+
+     let totalInvested = 0;
+     let totalCurrentValue = 0;
+
+     AppState.investments.forEach(inv => {
+         totalInvested += inv.amount;
+         totalCurrentValue += inv.currentValue;
+     });
+
+     const totalGain = totalCurrentValue - totalInvested;
+     const gainPercentage = totalInvested > 0 ? ((totalGain / totalInvested) * 100) : 0;
+     const gainColor = totalGain >= 0 ? 'var(--accent-revenue)' : 'var(--accent-expense)';
+
+     let investmentsHTML = `
+         <div class="stat-grid" style="margin-bottom: 15px;">
+             <div class="stat-box">
+                 <div class="stat-label">Total Investi</div>
+                 <div class="stat-value">${formatCurrency(totalInvested)}</div>
+             </div>
+             <div class="stat-box">
+                 <div class="stat-label">Valeur Actuelle</div>
+                 <div class="stat-value" style="color: ${gainColor};">${formatCurrency(totalCurrentValue)}</div>
+             </div>
+         </div>
+         <div style="text-align: center; padding: 10px; background: var(--bg-secondary); border-radius: 10px; margin-bottom: 15px;">
+             <span style="color: ${gainColor}; font-weight: 700; font-size: 1.2em;">
+                 ${totalGain >= 0 ? '+' : ''}${formatCurrency(totalGain)} (${gainPercentage >= 0 ? '+' : ''}${gainPercentage.toFixed(2)}%)
+             </span>
+         </div>
+     `;
+
+     // Group by type
+     const typeGroups = {};
+     AppState.investments.forEach(inv => {
+         if (!typeGroups[inv.type]) {
+             typeGroups[inv.type] = { invested: 0, current: 0 };
+         }
+         typeGroups[inv.type].invested += inv.amount;
+         typeGroups[inv.type].current += inv.currentValue;
+     });
+
+     Object.entries(typeGroups).forEach(([type, data]) => {
+         const typeGain = data.current - data.invested;
+         const typeGainPercent = data.invested > 0 ? ((typeGain / data.invested) * 100) : 0;
+         const typeName = {
+             'stock': 'Actions/ETF',
+             'crypto': 'Crypto',
+             'savings': 'Épargne',
+             'real_estate': 'Immobilier',
+             'other': 'Autre'
+         }[type] || type;
+
+         investmentsHTML += `
+             <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg-secondary); border-radius: 8px; margin-bottom: 8px;">
+                 <span>${typeName}</span>
+                 <span style="color: ${typeGain >= 0 ? 'var(--accent-revenue)' : 'var(--accent-expense)'}; font-weight: 600;">
+                     ${typeGain >= 0 ? '+' : ''}${typeGainPercent.toFixed(1)}%
+                 </span>
+             </div>
+         `;
+     });
+
+     container.innerHTML = investmentsHTML;
+ }
+
+ function deleteInvestment(index) {
+     if (confirm('Supprimer cet investissement ?')) {
+         AppState.investments.splice(index, 1);
+         saveInvestments();
+         updateInvestments();
+     }
+ }
+
+ function openInvestmentModal() {
+     document.getElementById('investmentModal').classList.add('active');
+     document.getElementById('investmentDate').value = new Date().toISOString().split('T')[0];
+ }
+
+ function closeInvestmentModal() {
+     document.getElementById('investmentModal').classList.remove('active');
+     document.getElementById('investmentForm').reset();
+ }
+
+ document.getElementById('investmentModal').addEventListener('click', (e) => {
+     if (e.target.id === 'investmentModal') {
+         closeInvestmentModal();
+     }
+ });
+
+ document.getElementById('investmentForm').addEventListener('submit', (e) => {
+     e.preventDefault();
+     
+     const name = document.getElementById('investmentName').value.trim();
+     const type = document.getElementById('investmentType').value;
+     const amount = parseFloat(document.getElementById('investmentAmount').value);
+     const currentValue = parseFloat(document.getElementById('investmentCurrentValue').value);
+     const date = document.getElementById('investmentDate').value;
+
+     if (!name || !amount || amount <= 0 || !currentValue || !date) {
+         alert('Veuillez remplir tous les champs correctement');
+         return;
+     }
+
+     const investment = {
+         id: Date.now(),
+         name,
+         type,
+         amount,
+         currentValue,
+         date,
+         createdAt: new Date().toISOString()
+     };
+
+     AppState.investments.push(investment);
+     saveInvestments();
+     closeInvestmentModal();
+     updateInvestments();
+     showNotification('📈', `Investissement "${name}" ajouté avec succès`);
+ });
+
+ function updateInvestmentSummary() {
+     if (AppState.investments.length === 0) {
+         showNotification('ℹ️', 'Aucun investissement à afficher', 'info');
+         return;
+     }
+
+     const totalInvested = AppState.investments.reduce((sum, inv) => sum + inv.amount, 0);
+     const totalCurrent = AppState.investments.reduce((sum, inv) => sum + inv.currentValue, 0);
+     const totalGain = totalCurrent - totalInvested;
+     const gainPercent = ((totalGain / totalInvested) * 100).toFixed(2);
+
+     // Group by type
+     const typeGroups = {};
+     AppState.investments.forEach(inv => {
+         if (!typeGroups[inv.type]) {
+             typeGroups[inv.type] = [];
+         }
+         typeGroups[inv.type].push(inv);
+     });
+
+     let modalHTML = `
+         <div class="stat-grid" style="margin-bottom: 25px;">
+             <div class="stat-box">
+                 <div class="stat-label">Total Investi</div>
+                 <div class="stat-value">${formatCurrency(totalInvested)}</div>
+             </div>
+             <div class="stat-box">
+                 <div class="stat-label">Valeur Actuelle</div>
+                 <div class="stat-value">${formatCurrency(totalCurrent)}</div>
+             </div>
+             <div class="stat-box">
+                 <div class="stat-label">Plus/Moins Value</div>
+                 <div class="stat-value" style="color: ${totalGain >= 0 ? 'var(--accent-revenue)' : 'var(--accent-expense)'};">
+                     ${totalGain >= 0 ? '+' : ''}${formatCurrency(totalGain)}
+                 </div>
+             </div>
+             <div class="stat-box">
+                 <div class="stat-label">Performance</div>
+                 <div class="stat-value" style="color: ${gainPercent >= 0 ? 'var(--accent-revenue)' : 'var(--accent-expense)'};">
+                     ${gainPercent >= 0 ? '+' : ''}${gainPercent}%
+                 </div>
+             </div>
+         </div>
+     `;
+
+     Object.entries(typeGroups).forEach(([type, investments]) => {
+         const typeInvested = investments.reduce((sum, inv) => sum + inv.amount, 0);
+         const typeCurrent = investments.reduce((sum, inv) => sum + inv.currentValue, 0);
+         const typeGain = typeCurrent - typeInvested;
+         const typePercent = ((typeGain / typeInvested) * 100).toFixed(2);
+         const typeName = {
+             'stock': '📊 Actions / ETF',
+             'crypto': '🪙 Cryptomonnaie',
+             'savings': '🏦 Livret / Épargne',
+             'real_estate': '🏠 Immobilier',
+             'other': '📦 Autre'
+         }[type] || type;
+
+         modalHTML += `
+             <h3 style="margin: 20px 0 15px 0; color: var(--text-primary);">${typeName}</h3>
+         `;
+
+         investments.forEach(inv => {
+             const invGain = inv.currentValue - inv.amount;
+             const invPercent = ((invGain / inv.amount) * 100).toFixed(2);
+             
+             modalHTML += `
+                 <div class="budget-item" style="margin-bottom: 10px;">
+                     <div class="budget-header">
+                         <div class="budget-category">${inv.name}</div>
+                         <div style="color: ${invGain >= 0 ? 'var(--accent-revenue)' : 'var(--accent-expense)'}; font-weight: 600;">
+                             ${invGain >= 0 ? '+' : ''}${invPercent}%
+                         </div>
+                     </div>
+                     <div style="display: flex; justify-content: space-between; font-size: 0.9em; color: var(--text-secondary);">
+                         <span>Investi: ${formatCurrency(inv.amount)}</span>
+                         <span>Actuel: ${formatCurrency(inv.currentValue)}</span>
+                     </div>
+                 </div>
+             `;
+         });
+     });
+
+     document.getElementById('investmentSummaryContent').innerHTML = modalHTML;
+     document.getElementById('investmentSummaryModal').classList.add('active');
+ }
+
+ function closeInvestmentSummaryModal() {
+     document.getElementById('investmentSummaryModal').classList.remove('active');
+ }
+
+ document.getElementById('investmentSummaryModal').addEventListener('click', (e) => {
+     if (e.target.id === 'investmentSummaryModal') {
+         closeInvestmentSummaryModal();
+     }
+ });
+
+ // ==================== SUBSCRIPTIONS ====================
+ function updateSubscriptions() {
+     const container = document.getElementById('subscriptionsContainer');
+     
+     if (AppState.subscriptions.length === 0) {
+         container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔔</div><p>Aucun abonnement détecté</p></div>';
+         return;
+     }
+
+     const now = new Date();
+     let totalMonthly = 0;
+     let totalYearly = 0;
+     let upcomingCount = 0;
+
+     const categoryIcons = {
+         'streaming': '🎬',
+         'cloud': '☁️',
+         'software': '💻',
+         'gaming': '🎮',
+         'fitness': '💪',
+         'news': '📰',
+         'other': '📦'
+     };
+
+     let subscriptionsHTML = '';
+     AppState.subscriptions.forEach((sub, index) => {
+         const nextDate = new Date(sub.nextDate);
+         const daysUntil = Math.ceil((nextDate - now) / (1000 * 60 * 60 * 24));
+         
+         // Calculate monthly/yearly cost
+         let monthlyCost = sub.amount;
+         let yearlyCost = sub.amount * 12;
+         
+         if (sub.frequency === 'weekly') {
+             monthlyCost = sub.amount * 4.33;
+             yearlyCost = sub.amount * 52;
+         } else if (sub.frequency === 'quarterly') {
+             monthlyCost = sub.amount / 3;
+             yearlyCost = sub.amount * 4;
+         } else if (sub.frequency === 'yearly') {
+             monthlyCost = sub.amount / 12;
+             yearlyCost = sub.amount;
+         }
+
+         totalMonthly += monthlyCost;
+         totalYearly += yearlyCost;
+
+         if (daysUntil <= 7 && daysUntil >= 0) {
+             upcomingCount++;
+         }
+
+         let statusClass = '';
+         let statusText = `Dans ${daysUntil} jours`;
+         
+         if (daysUntil < 0) {
+             statusClass = 'budget-warning';
+             statusText = 'En retard';
+         } else if (daysUntil === 0) {
+             statusClass = 'budget-warning';
+             statusText = 'Aujourd\'hui';
+         } else if (daysUntil <= 3) {
+             statusClass = 'budget-warning';
+         }
+
+         const icon = categoryIcons[sub.category] || '📦';
+
+         subscriptionsHTML += `
+             <div class="budget-item">
+                 <div class="budget-header">
+                     <div class="budget-category">${icon} ${sub.name}</div>
+                     <button class="goal-delete" onclick="deleteSubscription(${index})">🗑️</button>
+                 </div>
+                 <div class="budget-status">
+                     <span>${formatCurrency(sub.amount)}</span>
+                     <span class="${statusClass}">${statusText}</span>
+                 </div>
+                 <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.85em; color: var(--text-secondary);">
+                     <span>📅 ${nextDate.toLocaleDateString('fr-FR')}</span>
+                     <span>📊 ${monthlyCost.toFixed(0)}/mois</span>
+                 </div>
+             </div>
+         `;
+     });
+
+     container.innerHTML = `
+         <div class="stat-grid" style="margin-bottom: 15px;">
+             <div class="stat-box">
+                 <div class="stat-label">Mensuel</div>
+                 <div class="stat-value">${formatCurrency(totalMonthly)}</div>
+             </div>
+             <div class="stat-box">
+                 <div class="stat-label">Annuel</div>
+                 <div class="stat-value">${formatCurrency(totalYearly)}</div>
+             </div>
+         </div>
+         ${upcomingCount > 0 ? `<div style="text-align: center; padding: 10px; background: #ff980020; border-radius: 8px; margin-bottom: 15px; color: #ff9800; font-weight: 600;">⚠️ ${upcomingCount} prélèvement(s) imminent(s)</div>` : ''}
+         ${subscriptionsHTML}
+     `;
+
+     // Check for upcoming subscriptions and notify
+     checkSubscriptionAlerts();
+ }
+
+ function deleteSubscription(index) {
+     if (confirm('Supprimer cet abonnement ?')) {
+         AppState.subscriptions.splice(index, 1);
+         saveSubscriptions();
+         updateSubscriptions();
+     }
+ }
+
+ function openSubscriptionModal() {
+     document.getElementById('subscriptionModal').classList.add('active');
+     
+     // Set default date to next month
+     const defaultDate = new Date();
+     defaultDate.setMonth(defaultDate.getMonth() + 1);
+     document.getElementById('subscriptionNextDate').value = defaultDate.toISOString().split('T')[0];
+ }
+
+ function closeSubscriptionModal() {
+     document.getElementById('subscriptionModal').classList.remove('active');
+     document.getElementById('subscriptionForm').reset();
+ }
+
+ document.getElementById('subscriptionModal').addEventListener('click', (e) => {
+     if (e.target.id === 'subscriptionModal') {
+         closeSubscriptionModal();
+     }
+ });
+
+ document.getElementById('subscriptionForm').addEventListener('submit', (e) => {
+     e.preventDefault();
+     
+     const name = document.getElementById('subscriptionName').value.trim();
+     const amount = parseFloat(document.getElementById('subscriptionAmount').value);
+     const frequency = document.getElementById('subscriptionFrequency').value;
+     const nextDate = document.getElementById('subscriptionNextDate').value;
+     const category = document.getElementById('subscriptionCategory').value;
+     const notify = document.getElementById('subscriptionNotify').checked;
+
+     if (!name || !amount || amount <= 0 || !nextDate) {
+         alert('Veuillez remplir tous les champs correctement');
+         return;
+     }
+
+     const subscription = {
+         id: Date.now(),
+         name,
+         amount,
+         frequency,
+         nextDate,
+         category,
+         notify,
+         createdAt: new Date().toISOString()
+     };
+
+     AppState.subscriptions.push(subscription);
+     saveSubscriptions();
+     closeSubscriptionModal();
+     updateSubscriptions();
+     showNotification('🔔', `Abonnement "${name}" ajouté avec succès`);
+ });
+
+ function checkSubscriptionAlerts() {
+     const now = new Date();
+     AppState.subscriptions.forEach(sub => {
+         const nextDate = new Date(sub.nextDate);
+         const daysUntil = Math.ceil((nextDate - now) / (1000 * 60 * 60 * 24));
+         
+         if (daysUntil === 1 && sub.notify) {
+             showNotification('🔔', `Rappel: ${sub.name} sera prélevé demain (${formatCurrency(sub.amount)})`, 'warning');
+         } else if (daysUntil === 3 && sub.notify) {
+             showNotification('🔔', `Rappel: ${sub.name} dans 3 jours (${formatCurrency(sub.amount)})`, 'info');
+         }
+     });
+ }
+
+ // ==================== CURRENCY CONVERTER ====================
+ const exchangeRates = {
+     'XOF': { 'EUR': 0.001524, 'USD': 0.00165, 'GBP': 0.00130, 'XOF': 1 },
+     'EUR': { 'XOF': 655.96, 'USD': 1.08, 'GBP': 0.86, 'EUR': 1 },
+     'USD': { 'XOF': 607.00, 'EUR': 0.93, 'GBP': 0.80, 'USD': 1 },
+     'GBP': { 'XOF': 760.00, 'EUR': 1.16, 'USD': 1.25, 'GBP': 1 }
+ };
+
+ function convertCurrency() {
+     const amount = parseFloat(document.getElementById('convertAmount').value) || 0;
+     const fromCurrency = document.getElementById('fromCurrency').value;
+     const toCurrency = document.getElementById('toCurrency').value;
+     
+     if (amount <= 0) {
+         showNotification('❌', 'Veuillez entrer un montant valide', 'error');
+         return;
+     }
+
+     const rate = exchangeRates[fromCurrency][toCurrency];
+     const result = amount * rate;
+     const inverseRate = exchangeRates[toCurrency][fromCurrency];
+
+     document.getElementById('conversionResult').textContent = `${result.toFixed(2)} ${toCurrency}`;
+     document.getElementById('conversionRate').textContent = `1 ${fromCurrency} = ${rate.toFixed(4)} ${toCurrency}`;
+     
+     showNotification('💱', `${formatCurrency(amount)} ${fromCurrency} = ${result.toFixed(2)} ${toCurrency}`, 'success');
+ }
+
+ // Update conversion when currency changes
+ document.getElementById('fromCurrency').addEventListener('change', convertCurrency);
+ document.getElementById('toCurrency').addEventListener('change', convertCurrency);
+ document.getElementById('convertAmount').addEventListener('input', convertCurrency);
 
  // Advanced stats
  function updateAdvancedStats() {
@@ -2438,6 +3074,9 @@ function updateAll() {
             () => updateGoals(),
             () => updateBudgets(),
             () => updateRecurring(),
+            () => updateDebts(),
+            () => updateInvestments(),
+            () => updateSubscriptions(),
             () => populateFilterCategories(),
             () => updateAdvancedStats()
         ];
@@ -2519,14 +3158,7 @@ function updateAll() {
      }
  }, 24 * 60 * 60 * 1000);
 
- // Protection contre le clic droit (optionnel)
- document.addEventListener('contextmenu', event => event.preventDefault());
  
- document.onkeydown = function(e) {
-     if (e.keyCode == 123) return false; // F12
-     if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; // Ctrl+Shift+I
-     if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // Ctrl+U
- };
 
 console.log('%c🔒 Finance Tracker Pro - v2.0', 'color: #0095f6; font-size: 20px; font-weight: bold;');
 console.log('%c⚠️ Attention : Cette application stocke vos données localement dans votre navigateur.', 'color: #ff9800; font-size: 14px;');

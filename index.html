@@ -86,7 +86,7 @@
                     <div class="pin-content">
                         <div class="pin-header">
                             <div class="pin-label">Revenus Total</div>
-                            <div class="pin-icon">📈</div>
+                            <div class="pin-icon">📉</div>
                         </div>
                         <div class="pin-amount revenue" id="totalRevenue">0 FCFA</div>
                     </div>
@@ -98,7 +98,7 @@
                     <div class="pin-content">
                         <div class="pin-header">
                             <div class="pin-label">Dépenses Total</div>
-                            <div class="pin-icon">📉</div>
+                            <div class="pin-icon">📈</div>
                         </div>
                         <div class="pin-amount expense" id="totalExpense">0 FCFA</div>
                     </div>
@@ -261,6 +261,108 @@
                         <span class="btn-icon">💰</span>
                         <span class="btn-text">+ Définir un budget</span>
                     </button>
+                </div>
+            </div>
+
+            <!-- 💳 Dettes & Prêts -->
+            <div class="masonry-item">
+                <div class="form-card">
+                    <h2>💳 Dettes & Prêts</h2>
+                    <div class="chart-container" id="debtsContainer">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">💳</div>
+                            <p>Aucun prêt/en dette</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-lg full-width" onclick="openDebtModal()" aria-label="Ajouter une dette">
+                        <span class="btn-icon">💳</span>
+                        <span class="btn-text">+ Ajouter dette/emprunt</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 📈 Investissements -->
+            <div class="masonry-item">
+                <div class="form-card">
+                    <h2>📈 Investissements</h2>
+                    <div class="chart-container" id="investmentsContainer">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📈</div>
+                            <p>Aucun investissement</p>
+                        </div>
+                    </div>
+                    <div class="investment-buttons">
+                        <button class="btn btn-primary btn-lg" onclick="openInvestmentModal()" aria-label="Ajouter un investissement">
+                            <span class="btn-icon">📈</span>
+                            <span class="btn-text">+ Ajouter</span>
+                        </button>
+                        <button class="btn btn-secondary btn-lg" onclick="updateInvestmentSummary()" aria-label="Voir le résumé">
+                            <span class="btn-icon">📊</span>
+                            <span class="btn-text">Résumé</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🔔 Abonnements -->
+            <div class="masonry-item">
+                <div class="form-card">
+                    <h2>🔔 Abonnements</h2>
+                    <div class="chart-container" id="subscriptionsContainer">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🔔</div>
+                            <p>Aucun abonnement détecté</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-lg full-width" onclick="openSubscriptionModal()" aria-label="Ajouter un abonnement">
+                        <span class="btn-icon">🔔</span>
+                        <span class="btn-text">+ Ajouter abonnement</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 💱 Convertisseur -->
+            <div class="masonry-item">
+                <div class="form-card">
+                    <h2>💱 Convertisseur</h2>
+                    <div class="currency-converter">
+                        <div class="form-group">
+                            <label>Montant</label>
+                            <input type="number" id="convertAmount" placeholder="0" min="0" value="10000">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0;">
+                            <div class="form-group">
+                                <label>De</label>
+                                <select id="fromCurrency">
+                                    <option value="XOF">FCFA (XOF)</option>
+                                    <option value="EUR">Euro (EUR)</option>
+                                    <option value="USD">Dollar (USD)</option>
+                                    <option value="GBP">Livre (GBP)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Vers</label>
+                                <select id="toCurrency">
+                                    <option value="XOF">FCFA (XOF)</option>
+                                    <option value="EUR" selected>Euro (EUR)</option>
+                                    <option value="USD">Dollar (USD)</option>
+                                    <option value="GBP">Livre (GBP)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="text-align: center; padding: 20px; background: var(--bg-secondary); border-radius: 12px; margin-bottom: 15px;">
+                            <div id="conversionResult" style="font-size: 1.8em; font-weight: 700; color: var(--accent-revenue);">
+                                15.25 EUR
+                            </div>
+                            <div id="conversionRate" style="font-size: 0.9em; color: var(--text-secondary); margin-top: 5px;">
+                                1 EUR = 655.96 XOF
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-lg full-width" onclick="convertCurrency()" aria-label="Convertir">
+                            <span class="btn-icon">💱</span>
+                            <span class="btn-text">Convertir</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -629,6 +731,157 @@
         </div>
     </div>
 
+    <!-- 💳 Debt Modal -->
+    <div class="modal" id="debtModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>💳 Nouvelle Dette / Prêt</h2>
+                <button class="modal-close" onclick="closeDebtModal()">×</button>
+            </div>
+            <form id="debtForm">
+                <div class="form-group">
+                    <label for="debtDescription">Description</label>
+                    <input type="text" id="debtDescription" placeholder="Ex: Prêt familial, Dette carte..." required>
+                </div>
+                <div class="form-group">
+                    <label for="debtAmount">Montant (FCFA)</label>
+                    <input type="number" id="debtAmount" placeholder="0" min="0" step="1000" required>
+                </div>
+                <div class="form-group">
+                    <label for="debtType">Type</label>
+                    <select id="debtType" required>
+                        <option value="owed_to_me">On me doit de l'argent</option>
+                        <option value="i_owe">Je dois de l'argent</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="debtPerson">Personne</label>
+                    <input type="text" id="debtPerson" placeholder="Nom de la personne" required>
+                </div>
+                <div class="form-group">
+                    <label for="debtDueDate">Date d'échéance</label>
+                    <input type="date" id="debtDueDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="debtInterest">Taux d'intérêt (%)</label>
+                    <input type="number" id="debtInterest" placeholder="0" min="0" step="0.1" value="0">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeDebtModal()">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 📈 Investment Modal -->
+    <div class="modal" id="investmentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📈 Nouvel Investissement</h2>
+                <button class="modal-close" onclick="closeInvestmentModal()">×</button>
+            </div>
+            <form id="investmentForm">
+                <div class="form-group">
+                    <label for="investmentName">Nom de l'investissement</label>
+                    <input type="text" id="investmentName" placeholder="Ex: Actions Apple, Crypto BTC..." required>
+                </div>
+                <div class="form-group">
+                    <label for="investmentType">Type</label>
+                    <select id="investmentType" required>
+                        <option value="stock">Actions / ETF</option>
+                        <option value="crypto">Cryptomonnaie</option>
+                        <option value="savings">Livret / Épargne</option>
+                        <option value="real_estate">Immobilier</option>
+                        <option value="other">Autre</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="investmentAmount">Montant investi (FCFA)</label>
+                    <input type="number" id="investmentAmount" placeholder="0" min="0" step="1000" required>
+                </div>
+                <div class="form-group">
+                    <label for="investmentCurrentValue">Valeur actuelle (FCFA)</label>
+                    <input type="number" id="investmentCurrentValue" placeholder="0" min="0" step="1000" required>
+                </div>
+                <div class="form-group">
+                    <label for="investmentDate">Date d'achat</label>
+                    <input type="date" id="investmentDate" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeInvestmentModal()">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 🔔 Subscription Modal -->
+    <div class="modal" id="subscriptionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔔 Nouvel Abonnement</h2>
+                <button class="modal-close" onclick="closeSubscriptionModal()">×</button>
+            </div>
+            <form id="subscriptionForm">
+                <div class="form-group">
+                    <label for="subscriptionName">Nom de l'abonnement</label>
+                    <input type="text" id="subscriptionName" placeholder="Ex: Netflix, Spotify, AWS..." required>
+                </div>
+                <div class="form-group">
+                    <label for="subscriptionAmount">Montant (FCFA)</label>
+                    <input type="number" id="subscriptionAmount" placeholder="0" min="0" step="100" required>
+                </div>
+                <div class="form-group">
+                    <label for="subscriptionFrequency">Fréquence</label>
+                    <select id="subscriptionFrequency" required>
+                        <option value="weekly">Hebdomadaire</option>
+                        <option value="monthly" selected>Mensuel</option>
+                        <option value="quarterly">Trimestriel</option>
+                        <option value="yearly">Annuel</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="subscriptionNextDate">Prochain prélèvement</label>
+                    <input type="date" id="subscriptionNextDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="subscriptionCategory">Catégorie</label>
+                    <select id="subscriptionCategory" required>
+                        <option value="streaming">Streaming / Divertissement</option>
+                        <option value="cloud">Cloud / Services</option>
+                        <option value="software">Logiciels</option>
+                        <option value="gaming">Gaming</option>
+                        <option value="fitness">Fitness / Santé</option>
+                        <option value="news">Actualités</option>
+                        <option value="other">Autre</option>
+                    </select>
+                </div>
+                <div style="margin-top: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="subscriptionNotify" checked>
+                        <span>Recevoir une notification avant le prélèvement</span>
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeSubscriptionModal()">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Investment Summary Modal -->
+    <div class="modal" id="investmentSummaryModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>📈 Résumé des Investissements</h2>
+                <button class="modal-close" onclick="closeInvestmentSummaryModal()">×</button>
+            </div>
+            <div id="investmentSummaryContent"></div>
+        </div>
+    </div>
+
     <!-- Edit Modal -->
     <div class="modal" id="editModal">
         <div class="modal-content">
@@ -678,5 +931,212 @@
 
    <script src="./utils-helpers.js"></script>
    <script src="./Script.js"></script>
+   
+   <!-- Mobile Bottom Navigation -->
+   <div class="bottom-nav active" id="bottomNav">
+       <div class="active-bubble" id="activeBubble"></div>
+       
+       <!-- Home -->
+       <div class="nav-item active" data-index="0" data-page="home" onclick="navigateToPage('home')">
+           <svg viewBox="0 0 24 24">
+               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+               <polyline points="9 22 9 12 15 12 15 22"></polyline>
+           </svg>
+       </div>
+       
+       <!-- Transactions -->
+       <div class="nav-item" data-index="1" data-page="transactions" onclick="navigateToPage('transactions')">
+           <svg viewBox="0 0 24 24">
+               <line x1="12" y1="1" x2="12" y2="23"></line>
+               <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+           </svg>
+       </div>
+       
+       <!-- Center Plus Button -->
+       <div class="nav-plus-container">
+           <div class="plus-bubble"></div>
+           <button class="nav-plus-btn" id="navPlusBtn" onclick="scrollToAddTransaction()" title="Ajouter une transaction">
+               <svg viewBox="0 0 24 24">
+                   <line x1="12" y1="5" x2="12" y2="19"></line>
+                   <line x1="5" y1="12" x2="19" y2="12"></line>
+               </svg>
+           </button>
+       </div>
+       
+       <!-- Analytics -->
+       <div class="nav-item" data-index="2" data-page="analytics" onclick="navigateToPage('analytics')">
+           <svg viewBox="0 0 24 24">
+               <line x1="18" y1="20" x2="18" y2="10"></line>
+               <line x1="12" y1="20" x2="12" y2="4"></line>
+               <line x1="6" y1="20" x2="6" y2="14"></line>
+           </svg>
+       </div>
+       
+       <!-- Settings -->
+       <div class="nav-item" data-index="3" data-page="settings" onclick="navigateToPage('settings')">
+           <svg viewBox="0 0 24 24">
+               <circle cx="12" cy="12" r="3"></circle>
+               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+           </svg>
+       </div>
+   </div>
+   
+   <script>
+       // Bottom Navigation Functionality
+       const bottomNavItems = document.querySelectorAll('#bottomNav .nav-item');
+       const activeBubble = document.getElementById('activeBubble');
+       const bottomNav = document.getElementById('bottomNav');
+       
+       // Section offsets for navigation
+       const sectionOffsets = {
+           'home': { top: 0, offset: -100 },
+           'transactions': { top: 400, offset: -80 },
+           'analytics': { top: 900, offset: -80 },
+           'settings': { top: 2000, offset: -80 }
+       };
+       
+       function updateBubblePosition(item) {
+           if (!item || !activeBubble) return;
+           
+           const navRect = bottomNav.getBoundingClientRect();
+           const itemRect = item.getBoundingClientRect();
+           // Center the bubble on the nav item
+           const leftPosition = itemRect.left - navRect.left;
+           
+           activeBubble.style.left = leftPosition + 'px';
+           activeBubble.style.top = '4px';
+       }
+       
+       // Initialize bubble position
+       function initBottomNav() {
+           const activeItem = document.querySelector('#bottomNav .nav-item.active');
+           if (activeItem) {
+               updateBubblePosition(activeItem);
+           }
+           
+           // Add click handlers
+           bottomNavItems.forEach(item => {
+               item.addEventListener('click', function() {
+                   // Remove active from all items
+                   bottomNavItems.forEach(nav => nav.classList.remove('active'));
+                   
+                   // Add active to clicked item
+                   this.classList.add('active');
+                   
+                   // Move bubble
+                   updateBubblePosition(this);
+                   
+                   // Navigate to page
+                   const page = this.dataset.page;
+                   if (page) {
+                       navigateToPage(page);
+                   }
+               });
+           });
+       }
+       
+       // Navigation function - scroll to section
+       function navigateToPage(page) {
+           // Store current page
+           localStorage.setItem('currentPage', page);
+           
+           let scrollY = 0;
+           switch(page) {
+               case 'home':
+                   scrollY = 0;
+                   break;
+               case 'transactions':
+                   // Find the transactions form card position
+                   const formCard = document.querySelector('.form-card h2');
+                   if (formCard) {
+                       scrollY = formCard.offsetTop - 100;
+                   } else {
+                       scrollY = 400;
+                   }
+                   break;
+               case 'analytics':
+                   // Find the pie chart card position
+                   const pieCard = document.querySelector('#pieChart');
+                   if (pieCard) {
+                       scrollY = pieCard.offsetTop - 80;
+                   } else {
+                       scrollY = 900;
+                   }
+                   break;
+               case 'settings':
+                   // Scroll to top of settings modal position
+                   scrollY = document.body.scrollHeight - 500;
+                   break;
+               default:
+                   scrollY = 0;
+           }
+           
+           // Smooth scroll to section
+           window.scrollTo({ top: scrollY, behavior: 'smooth' });
+           
+           // Add visual feedback
+           const navItem = document.querySelector(`#bottomNav .nav-item[data-page="${page}"]`);
+           if (navItem) {
+               navItem.style.transform = 'scale(0.95)';
+               setTimeout(() => {
+                   navItem.style.transform = '';
+               }, 150);
+           }
+       }
+       
+       // Scroll to Add Transaction form
+       function scrollToAddTransaction() {
+           const transactionForm = document.getElementById('transactionForm');
+           if (transactionForm) {
+               const offsetTop = transactionForm.offsetTop - 100;
+               window.scrollTo({ top: offsetTop, behavior: 'smooth' });
+               
+               // Add visual feedback to plus button
+               const plusBtn = document.getElementById('navPlusBtn');
+               if (plusBtn) {
+                   plusBtn.style.transform = 'scale(0.9)';
+                   setTimeout(() => {
+                       plusBtn.style.transform = '';
+                   }, 200);
+               }
+               
+               // Focus on description input
+               setTimeout(() => {
+                   const descInput = document.getElementById('description');
+                   if (descInput) {
+                       descInput.focus();
+                   }
+               }, 500);
+           }
+       }
+       
+       // Recalculate bubble position on resize
+       window.addEventListener('resize', () => {
+           const activeItem = document.querySelector('#bottomNav .nav-item.active');
+           if (activeItem) {
+               updateBubblePosition(activeItem);
+           }
+       });
+       
+       // Initialize when DOM is ready
+       if (document.readyState === 'loading') {
+           document.addEventListener('DOMContentLoaded', initBottomNav);
+       } else {
+           initBottomNav();
+       }
+       
+       // Restore active state from localStorage
+       document.addEventListener('DOMContentLoaded', function() {
+           const savedPage = localStorage.getItem('currentPage');
+           if (savedPage) {
+               const navItem = document.querySelector(`#bottomNav .nav-item[data-page="${savedPage}"]`);
+               if (navItem) {
+                   document.querySelectorAll('#bottomNav .nav-item').forEach(item => item.classList.remove('active'));
+                   navItem.classList.add('active');
+                   updateBubblePosition(navItem);
+               }
+           }
+       });
+   </script>
 </body>
 </html>

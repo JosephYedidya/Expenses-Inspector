@@ -40,7 +40,7 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    height: 9Ÿ0px;
+    height: 90px;
     background: var(--bg-secondary);
     box-shadow: 0 2px 8px var(--shadow);
     z-index: 1000;
@@ -534,6 +534,7 @@ textarea:focus,
 }
 
 .pin-card {
+    margin-top: 20px;
     background: var(--bg-secondary);
     border-radius: 16px;
     overflow: hidden;
@@ -1432,6 +1433,22 @@ textarea:focus,
     .pin-key { width: 70px; height: 70px; font-size: 1.5em; }
     .export-btn span:last-child { display: none; }
     .nav-actions { gap: 8px; }
+
+    /* Investment buttons - tablet responsive */
+    .investment-buttons {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .investment-buttons .btn {
+        min-height: 44px;
+        font-size: 0.9em;
+        padding: 12px 16px;
+    }
+
+    .investment-buttons .btn-secondary {
+        width: auto;
+    }
 }
 
 @media (max-width: 480px) {
@@ -1444,6 +1461,22 @@ textarea:focus,
     .pin-key { width: 60px; height: 60px; }
     .pin-input { gap: 10px; }
     .pin-keypad { gap: 10px; }
+
+    /* Investment buttons - stacked on mobile */
+    .investment-buttons {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .investment-buttons .btn {
+        width: 100%;
+        min-height: 48px;
+        font-size: 0.95em;
+    }
+
+    .investment-buttons .btn-secondary {
+        width: 100%;
+    }
 }
 
 html {
@@ -2042,17 +2075,32 @@ html {
     .modal-close {
         transition: none;
     }
-    
+
     .btn:hover,
     .nav-btn:hover,
     .theme-toggle:hover {
         transform: none;
     }
-    
+
     .btn-loading::after {
         animation: none;
         content: '⏳';
     }
+}
+
+/* ========================================
+   INVESTMENT BUTTONS RESPONSIVE LAYOUT
+   ======================================== */
+
+.investment-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.investment-buttons .btn-secondary {
+    width: auto;
 }
 
 /* ========================================
@@ -2459,4 +2507,289 @@ html {
 /* Smooth Transitions */
 * {
     transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* ========================================
+   CHART ANIMATIONS
+   ======================================== */
+
+/* Chart line animation */
+@keyframes drawLine {
+    from {
+        stroke-dashoffset: 1000;
+    }
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.chart-line-animated {
+    animation: drawLine 1.5s ease-out forwards;
+}
+
+/* Point animation */
+@keyframes pointReveal {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.chart-point-animated {
+    animation: pointReveal 0.3s ease-out forwards;
+}
+
+/* Grid fade-in animation */
+@keyframes gridFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 0.3;
+    }
+}
+
+.chart-grid-animated {
+    animation: gridFadeIn 0.8s ease-out forwards;
+}
+
+/* Legend slide-up animation */
+@keyframes legendSlideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.chart-legend-animated {
+    animation: legendSlideUp 0.5s ease-out 1.2s forwards;
+    opacity: 0;
+}
+
+/* Chart container smooth transition */
+.chart-container {
+    transition: all 0.3s ease;
+}
+
+/* Loading state animation */
+@keyframes chartLoading {
+    0% { opacity: 0.3; }
+    50% { opacity: 0.7; }
+    100% { opacity: 0.3; }
+}
+
+.chart-loading {
+    animation: chartLoading 1.5s ease-in-out infinite;
+}
+
+/* ========================================
+   MOBILE BOTTOM NAVBAR - ROUND FLOATING DESIGN
+   ======================================== */
+
+.bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 30px);
+    max-width: 420px;
+    background: var(--bg-secondary);
+    padding: 10px 15px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    border-radius: 50px;
+    box-shadow: 0 -4px 30px var(--shadow), 0 0 0 1px rgba(255,255,255,0.1);
+    z-index: 1000;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bottom-nav.active {
+    display: flex;
+}
+
+.nav-item {
+    width: 46px;
+    height: 46px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
+    border-radius: 50%;
+}
+
+.nav-item svg {
+    width: 22px;
+    height: 22px;
+    stroke: var(--text-secondary);
+    fill: none;
+    stroke-width: 2;
+    transition: all 0.3s ease;
+}
+
+.nav-item.active svg {
+    stroke: #ffffff;
+    transform: scale(1.1);
+}
+
+.nav-item.active {
+    transform: translateY(-5px);
+}
+
+.active-bubble {
+    position: absolute;
+    width: 46px;
+    height: 46px;
+    background: linear-gradient(135deg, var(--accent-balance), #0077cc);
+    border-radius: 50%;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    z-index: 0;
+    box-shadow: 0 4px 15px rgba(0, 149, 246, 0.5);
+}
+
+/* Center Plus Button */
+.nav-plus-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+}
+
+.nav-plus-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-balance), #0077cc);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 20px rgba(0, 149, 246, 0.5);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2;
+}
+
+.nav-plus-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(0, 149, 246, 0.6);
+}
+
+.nav-plus-btn:active {
+    transform: scale(0.95);
+}
+
+.nav-plus-btn svg {
+    width: 28px;
+    height: 28px;
+    stroke: #ffffff;
+    fill: none;
+    stroke-width: 2.5;
+}
+
+.nav-plus-btn .plus-bubble {
+    position: absolute;
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, var(--accent-revenue), #10b981);
+    border-radius: 50%;
+    z-index: 0;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    opacity: 0;
+    transform: scale(0.8);
+}
+
+.nav-plus-btn.active .plus-bubble {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Bottom nav label */
+.nav-label {
+    position: absolute;
+    bottom: 4px;
+    font-size: 0.65em;
+    color: var(--text-secondary);
+    font-weight: 600;
+    white-space: nowrap;
+    transition: color 0.3s ease;
+}
+
+.nav-item.active .nav-label {
+    color: var(--accent-balance);
+}
+
+/* Responsive - Show bottom nav only on mobile */
+@media (max-width: 768px) {
+    .bottom-nav.active {
+        display: flex;
+    }
+    
+    body {
+        padding-bottom: 130px;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+    .bottom-nav {
+        bottom: 12px;
+        padding: 8px 12px;
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+        width: calc(100% - 24px);
+        max-width: none;
+    }
+    
+    .nav-item {
+        width: 42px;
+        height: 42px;
+    }
+    
+    .nav-item svg {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .active-bubble {
+        width: 42px;
+        height: 42px;
+    }
+    
+    .nav-plus-container {
+        width: 52px;
+        height: 52px;
+    }
+    
+    .nav-plus-btn {
+        width: 52px;
+        height: 52px;
+    }
+    
+    .nav-plus-btn svg {
+        width: 26px;
+        height: 26px;
+    }
+    
+    .nav-plus-btn .plus-bubble {
+        width: 52px;
+        height: 52px;
+    }
+    
+    body {
+        padding-bottom: 125px;
+    }
 }
