@@ -718,6 +718,97 @@
                 </div>
             </div>
 
+            <!-- 🔔 Notifications Settings -->
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: var(--text-primary); margin-bottom: 15px; font-size: 1.1em;">🔔 Notifications</h3>
+                
+                <div class="notification-settings">
+                    <!-- Master Toggle -->
+                    <div class="notification-item">
+                        <div class="notification-label">
+                            <span class="notification-icon">🔔</span>
+                            <div>
+                                <div class="notification-title">Notifications activées</div>
+                                <div class="notification-desc">Activer/désactiver toutes les notifications</div>
+                            </div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="notificationsEnabled" onchange="updateNotificationSetting('enabled', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Expense Reminders -->
+                    <div class="notification-item">
+                        <div class="notification-label">
+                            <span class="notification-icon">💸</span>
+                            <div>
+                                <div class="notification-title">Rappels de dépenses</div>
+                                <div class="notification-desc">Recevoir des rappels pour les dépenses récurrentes</div>
+                            </div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="expenseReminders" onchange="updateNotificationSetting('expenseReminders', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Budget Alerts -->
+                    <div class="notification-item">
+                        <div class="notification-label">
+                            <span class="notification-icon">💰</span>
+                            <div>
+                                <div class="notification-title">Alertes de budget</div>
+                                <div class="notification-desc">Notifications quand le budget approche de la limite</div>
+                            </div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="budgetAlerts" onchange="updateNotificationSetting('budgetAlerts', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Subscription Reminders -->
+                    <div class="notification-item">
+                        <div class="notification-label">
+                            <span class="notification-icon">📅</span>
+                            <div>
+                                <div class="notification-title">Rappels d'abonnements</div>
+                                <div class="notification-desc">Rappels avant les prélèvements d'abonnements</div>
+                            </div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="subscriptionReminders" onchange="updateNotificationSetting('subscriptionReminders', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Goal Progress -->
+                    <div class="notification-item">
+                        <div class="notification-label">
+                            <span class="notification-icon">🎯</span>
+                            <div>
+                                <div class="notification-title">Progression des objectifs</div>
+                                <div class="notification-desc">Notifications de progression vers vos objectifs</div>
+                            </div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="goalProgress" onchange="updateNotificationSetting('goalProgress', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Reminder Time -->
+                    <div class="notification-time-setting">
+                        <label for="reminderTime" class="notification-time-label">
+                            <span class="notification-icon">⏰</span>
+                           Heure de rappel quotidienne
+                        </label>
+                        <input type="time" id="reminderTime" class="notification-time-input" onchange="updateNotificationSetting('reminderTime', this.value)">
+                    </div>
+                </div>
+            </div>
+
             <div style="margin-bottom: 20px;">
                 <h3 style="color: var(--text-primary); margin-bottom: 15px; font-size: 1.1em;">ℹ️ Informations</h3>
                 
