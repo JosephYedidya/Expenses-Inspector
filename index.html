@@ -24,6 +24,217 @@
    
 </head>
 <body>
+    <!-- ==================== ONBOARDING SYSTEM ==================== -->
+<div class="onboarding-overlay" id="onboardingOverlay">
+    <!-- Welcome Screen -->
+    <div class="onboarding-screen" id="welcomeScreen">
+        <div class="onboarding-content">
+            <div class="onboarding-logo">💰</div>
+            <h1 class="onboarding-title">Bienvenue sur Finance Tracker</h1>
+            <p class="onboarding-subtitle">Prenez le contrôle de vos finances en quelques minutes</p>
+            
+            <div class="onboarding-features">
+                <div class="feature-carousel-wrapper" id="featureCarousel">
+                    <div class="feature-item active" data-feature="1">
+                        <span class="feature-icon">📊</span>
+                        <span class="feature-text">Suivez vos revenus et dépenses</span>
+                    </div>
+                    <div class="feature-item next" data-feature="2">
+                        <span class="feature-icon">🎯</span>
+                        <span class="feature-text">Définissez des objectifs financiers</span>
+                    </div>
+                    <div class="feature-item next" data-feature="3">
+                        <span class="feature-icon">💡</span>
+                        <span class="feature-text">Recevez des conseils personnalisés</span>
+                    </div>
+                    <div class="feature-item next" data-feature="4">
+                        <span class="feature-icon">🔒</span>
+                        <span class="feature-text">Sécurisez vos données avec un PIN</span>
+                    </div>
+                </div>
+                <div class="feature-navigation">
+                    <div class="feature-dots" id="featureDots">
+                        <span class="feature-dot active" onclick="goToFeature(1)"></span>
+                        <span class="feature-dot" onclick="goToFeature(2)"></span>
+                        <span class="feature-dot" onclick="goToFeature(3)"></span>
+                        <span class="feature-dot" onclick="goToFeature(4)"></span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-lg onboarding-btn" onclick="startTour()">
+                <span class="btn-icon">🚀</span>
+                <span class="btn-text">Commencer le tour guidé</span>
+            </button>
+            <button class="btn btn-ghost onboarding-btn-skip" onclick="skipOnboarding()">
+                Passer l'introduction
+            </button>
+        </div>
+    </div>
+
+    <!-- Tour Guide Slides -->
+    <div class="onboarding-screen" id="tourScreen" style="display: none;">
+        <div class="onboarding-content">
+            <div class="tour-progress">
+                <div class="tour-progress-bar" id="tourProgressBar"></div>
+            </div>
+            
+            <div class="tour-slides" id="tourSlides">
+                <!-- Slide 1: Ajouter une transaction -->
+                <div class="tour-slide active" data-slide="1">
+                    <div class="tour-illustration">💳</div>
+                    <h2 class="tour-title">Ajouter une transaction</h2>
+                    <p class="tour-description">
+                        Enregistrez facilement vos revenus et dépenses. Choisissez une catégorie, 
+                        entrez le montant et cliquez sur le bouton correspondant.
+                    </p>
+                    <div class="tour-example">
+                        <div class="example-card">
+                            <strong>Exemple :</strong> Salaire de 500 000 FCFA → Catégorie "Salaire" → Bouton "+ Revenu"
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tour-navigation" style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px;">
+                    <button class="btn btn-ghost" id="prevBtn" onclick="previousSlide()">
+                        ← Précédent
+                    </button>
+                    
+                    <div class="tour-dots" id="tourDots">
+                        </div>
+                
+                    <button class="btn btn-primary" id="nextBtn" onclick="nextSlide()">
+                        Suivant →
+                    </button>
+                    
+                    <button class="btn btn-primary" id="finishBtn" onclick="finishOnboarding()" style="display: none;">
+                        C'est parti ! 🚀
+                    </button>
+                </div>
+
+                <!-- Slide 2: Tableaux de bord -->
+                <div class="tour-slide" data-slide="2">
+                    <div class="tour-illustration">📊</div>
+                    <h2 class="tour-title">Visualisez vos finances</h2>
+                    <p class="tour-description">
+                        Consultez vos revenus totaux, dépenses et solde en temps réel. 
+                        Les graphiques vous montrent où va votre argent.
+                    </p>
+                    <div class="tour-example">
+                        <div class="example-card">
+                            Les cartes en haut affichent vos totaux. 
+                            Les graphiques circulaires montrent la répartition par catégorie.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slide 3: Objectifs et budgets -->
+                <div class="tour-slide" data-slide="3">
+                    <div class="tour-illustration">🎯</div>
+                    <h2 class="tour-title">Objectifs & Budgets</h2>
+                    <p class="tour-description">
+                        Définissez des objectifs d'épargne et des budgets mensuels par catégorie. 
+                        L'app vous alertera quand vous approchez de vos limites.
+                    </p>
+                    <div class="tour-example">
+                        <div class="example-card">
+                            Cliquez sur "+ Ajouter un objectif" ou "+ Définir un budget" 
+                            dans les cartes correspondantes.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slide 4: Sécurité -->
+                <div class="tour-slide" data-slide="4">
+                    <div class="tour-illustration">🔒</div>
+                    <h2 class="tour-title">Sécurisez vos données</h2>
+                    <p class="tour-description">
+                        Créez un code PIN pour protéger vos informations. 
+                        Activez le mode privé (👁️) pour masquer temporairement les montants.
+                    </p>
+                    <div class="tour-example">
+                        <div class="example-card">
+                            <strong>Conseil :</strong> Vous pouvez passer la création du PIN 
+                            et le configurer plus tard dans les paramètres ⚙️
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slide 5: Fonctionnalités avancées -->
+                <div class="tour-slide" data-slide="5">
+                    <div class="tour-illustration">✨</div>
+                    <h2 class="tour-title">Et bien plus encore !</h2>
+                    <p class="tour-description">
+                        Découvrez les dettes & prêts 💳, investissements 📈, 
+                        abonnements 🔔, transactions récurrentes 🔄, 
+                        convertisseur de devises 💱 et bien plus !
+                    </p>
+                    <div class="tour-example">
+                        <div class="example-card">
+                            Explorez toutes les cartes en défilant vers le bas. 
+                            Cliquez sur les éléments pour découvrir leurs fonctionnalités.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tour-navigation">
+                <button class="btn btn-secondary" onclick="previousSlide()" id="prevBtn" disabled>
+                    <span class="btn-icon">←</span>
+                    <span class="btn-text">Précédent</span>
+                </button>
+                <div class="tour-dots" id="tourDots">
+                    <span class="tour-dot active" onclick="goToSlide(1)"></span>
+                    <span class="tour-dot" onclick="goToSlide(2)"></span>
+                    <span class="tour-dot" onclick="goToSlide(3)"></span>
+                    <span class="tour-dot" onclick="goToSlide(4)"></span>
+                    <span class="tour-dot" onclick="goToSlide(5)"></span>
+                </div>
+                <button class="btn btn-primary" onclick="nextSlide()" id="nextBtn">
+                    <span class="btn-text">Suivant</span>
+                    <span class="btn-icon">→</span>
+                </button>
+            </div>
+
+            <button class="btn btn-ghost onboarding-btn-skip" onclick="skipOnboarding()">
+                Passer le tour
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Start Screen -->
+    <div class="onboarding-screen" id="quickStartScreen" style="display: none;">
+        <div class="onboarding-content">
+            <div class="tour-illustration">🚀</div>
+            <h2 class="onboarding-title">Commençons !</h2>
+            <p class="onboarding-subtitle">Que souhaitez-vous faire en premier ?</p>
+
+            <div class="quick-start-actions">
+                <div class="quick-start-card" onclick="quickStartAction('transaction')">
+                    <div class="quick-start-icon">💳</div>
+                    <div class="quick-start-label">Ajouter ma première transaction</div>
+                </div>
+                <div class="quick-start-card" onclick="quickStartAction('goal')">
+                    <div class="quick-start-icon">🎯</div>
+                    <div class="quick-start-label">Définir un objectif</div>
+                </div>
+                <div class="quick-start-card" onclick="quickStartAction('budget')">
+                    <div class="quick-start-icon">💰</div>
+                    <div class="quick-start-label">Créer un budget</div>
+                </div>
+                <div class="quick-start-card" onclick="quickStartAction('explore')">
+                    <div class="quick-start-icon">🔍</div>
+                    <div class="quick-start-label">Explorer l'application</div>
+                </div>
+            </div>
+
+            <button class="btn btn-ghost onboarding-btn-skip" onclick="finishOnboarding()">
+                Je découvrirai par moi-même
+            </button>
+        </div>
+    </div>
+</div>
+
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo">
