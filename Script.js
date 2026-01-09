@@ -3099,6 +3099,7 @@ function updateAll() {
  // Initialize app
  initSecurity();
  updateAll();
+ checkFirstVisit();
 
  // Intersection observer for lazy loading charts
  const observer = new IntersectionObserver((entries) => {
