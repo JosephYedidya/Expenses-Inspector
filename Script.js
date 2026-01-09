@@ -3234,3 +3234,467 @@ if ('serviceWorker' in navigator) {
         window.location.reload();
     });
 }
+
+// ==================== SYSTÈME DE NOTIFICATIONS COMPLET ====================
+
+// 1. Demander la permission pour les notifications
+async function requestNotificationPermission() {
+    if (!('Notification' in window)) {
+        showNotification('❌', 'Les notifications ne sont pas supportées sur cet appareil', 'error');
+        return false;
+    }
+
+    if (Notification.permission === 'granted') {
+        return true;
+    }
+
+    if (Notification.permission !== 'denied') {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            showNotification('✅', 'Notifications activées avec succès !', 'success');
+            return true;
+        }
+    }
+
+    showNotification('⚠️', 'Permission de notifications refusée', 'warning');
+    return false;
+}
+
+// 2. Envoyer une notification système
+function sendSystemNotification(title, options = {}) {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+
+    const defaultOptions = {
+        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💰</text></svg>',
+        badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💰</text></svg>',
+        vibrate: [200, 100, 200],
+        tag: 'finance-tracker',
+        requireInteraction: false
+    };
+
+    const notification = new Notification(title, { ...defaultOptions, ...options });
+
+    notification.onclick = function(event) {
+        event.preventDefault();
+        window.focus();
+        notification.close();
+    };
+
+    return notification;
+}
+
+// 3. Vérifier et envoyer les notifications selon le contexte
+function checkAndSendNotifications() {
+    const settings = {
+        enabled: localStorage.getItem('notificationsEnabled') === 'true',
+        budgetAlerts: localStorage.getItem('budgetAlerts') === 'true',
+        subscriptionReminders: localStorage.getItem('subscriptionReminders') === 'true',
+        goalProgress: localStorage.getItem('goalProgress') === 'true',
+        expenseReminders: localStorage.getItem('expenseReminders') === 'true'
+    };
+
+    if (!settings.enabled) return;
+
+    // Vérifier les budgets
+    if (settings.budgetAlerts) {
+        checkBudgetNotifications();
+    }
+
+    // Vérifier les abonnements
+    if (settings.subscriptionReminders) {
+        checkSubscriptionNotifications();
+    }
+
+    // Vérifier les objectifs
+    if (settings.goalProgress) {
+        checkGoalNotifications();
+    }
+}
+
+// 4. Notifications spécifiques pour les budgets
+function checkBudgetNotifications() {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    AppState.budgets.forEach(budget => {
+        const monthlyExpenses = AppState.transactions.filter(t => {
+            const tDate = new Date(t.date);
+            return t.type === 'expense' && 
+                   t.category === budget.category &&
+                   tDate.getMonth() === currentMonth && 
+                   tDate.getFullYear() === currentYear;
+        });
+
+        const spent = monthlyExpenses.reduce((sum, t) => sum + t.amount, 0);
+        const percentage = (spent / budget.amount) * 100;
+
+        // Notification à 80% du budget
+        if (percentage >= 80 && percentage < 100) {
+            const lastNotified = localStorage.getItem(`budget_notif_80_${budget.category}_${currentMonth}`);
+            if (!lastNotified) {
+                sendSystemNotification('⚠️ Budget Alert', {
+                    body: `Vous avez utilisé ${percentage.toFixed(0)}% de votre budget ${budget.category}`,
+                    tag: `budget-${budget.category}`
+                });
+                localStorage.setItem(`budget_notif_80_${budget.category}_${currentMonth}`, 'true');
+            }
+        }
+
+        // Notification à 100% du budget
+        if (percentage >= 100) {
+            const lastNotified = localStorage.getItem(`budget_notif_100_${budget.category}_${currentMonth}`);
+            if (!lastNotified) {
+                sendSystemNotification('🚨 Budget Dépassé', {
+                    body: `Votre budget ${budget.category} est dépassé de ${formatCurrency(spent - budget.amount)}`,
+                    tag: `budget-exceeded-${budget.category}`
+                });
+                localStorage.setItem(`budget_notif_100_${budget.category}_${currentMonth}`, 'true');
+            }
+        }
+    });
+}
+
+// 5. Notifications pour les abonnements
+function checkSubscriptionNotifications() {
+    const now = new Date();
+    
+    AppState.subscriptions.forEach(sub => {
+        if (!sub.notify) return;
+
+        const nextDate = new Date(sub.nextDate);
+        const daysUntil = Math.ceil((nextDate - now) / (1000 * 60 * 60 * 24));
+
+        // Notification 3 jours avant
+        if (daysUntil === 3) {
+            const lastNotified = localStorage.getItem(`sub_notif_3_${sub.id}`);
+            if (!lastNotified || new Date(lastNotified).toDateString() !== now.toDateString()) {
+                sendSystemNotification('📅 Rappel Abonnement', {
+                    body: `${sub.name} sera prélevé dans 3 jours (${formatCurrency(sub.amount)})`,
+                    tag: `subscription-${sub.id}`
+                });
+                localStorage.setItem(`sub_notif_3_${sub.id}`, now.toISOString());
+            }
+        }
+
+        // Notification 1 jour avant
+        if (daysUntil === 1) {
+            const lastNotified = localStorage.getItem(`sub_notif_1_${sub.id}`);
+            if (!lastNotified || new Date(lastNotified).toDateString() !== now.toDateString()) {
+                sendSystemNotification('🔔 Rappel Abonnement', {
+                    body: `${sub.name} sera prélevé demain (${formatCurrency(sub.amount)})`,
+                    tag: `subscription-${sub.id}`,
+                    requireInteraction: true
+                });
+                localStorage.setItem(`sub_notif_1_${sub.id}`, now.toISOString());
+            }
+        }
+    });
+}
+
+// 6. Notifications pour les objectifs
+function checkGoalNotifications() {
+    const totalRevenue = AppState.transactions
+        .filter(t => t.type === 'revenue')
+        .reduce((sum, t) => sum + t.amount, 0);
+    
+    const totalExpense = AppState.transactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0);
+    
+    const currentSavings = totalRevenue - totalExpense;
+
+    AppState.goals.forEach(goal => {
+        const progress = (currentSavings / goal.target) * 100;
+
+        // Notification à 50% de l'objectif
+        if (progress >= 50 && progress < 75) {
+            const lastNotified = localStorage.getItem(`goal_notif_50_${goal.id}`);
+            if (!lastNotified) {
+                sendSystemNotification('🎯 Progrès Objectif', {
+                    body: `Vous avez atteint 50% de votre objectif "${goal.name}" !`,
+                    tag: `goal-${goal.id}`
+                });
+                localStorage.setItem(`goal_notif_50_${goal.id}`, 'true');
+            }
+        }
+
+        // Notification à 75% de l'objectif
+        if (progress >= 75 && progress < 100) {
+            const lastNotified = localStorage.getItem(`goal_notif_75_${goal.id}`);
+            if (!lastNotified) {
+                sendSystemNotification('🎯 Progrès Objectif', {
+                    body: `Vous avez atteint 75% de votre objectif "${goal.name}" ! Encore un effort !`,
+                    tag: `goal-${goal.id}`
+                });
+                localStorage.setItem(`goal_notif_75_${goal.id}`, 'true');
+            }
+        }
+
+        // Notification à 100% de l'objectif
+        if (progress >= 100) {
+            const lastNotified = localStorage.getItem(`goal_notif_100_${goal.id}`);
+            if (!lastNotified) {
+                sendSystemNotification('🎉 Objectif Atteint !', {
+                    body: `Félicitations ! Vous avez atteint votre objectif "${goal.name}" !`,
+                    tag: `goal-achieved-${goal.id}`,
+                    requireInteraction: true
+                });
+                localStorage.setItem(`goal_notif_100_${goal.id}`, 'true');
+            }
+        }
+    });
+}
+
+// 7. Modifier la fonction updateNotificationSetting existante
+function updateNotificationSetting(setting, value) {
+    localStorage.setItem(setting, value);
+    
+    // Si on active les notifications, demander la permission
+    if (setting === 'enabled' && value === true) {
+        requestNotificationPermission().then(granted => {
+            if (granted) {
+                // Démarrer les vérifications périodiques
+                startNotificationChecker();
+            } else {
+                // Désactiver le toggle si permission refusée
+                document.getElementById('notificationsEnabled').checked = false;
+                localStorage.setItem('enabled', 'false');
+            }
+        });
+    }
+    
+    showNotification('✅', 'Paramètre de notification mis à jour', 'success');
+}
+
+// 8. Démarrer le système de vérification des notifications
+let notificationInterval;
+
+function startNotificationChecker() {
+    // Vérifier immédiatement
+    checkAndSendNotifications();
+    
+    // Vérifier toutes les heures
+    if (notificationInterval) clearInterval(notificationInterval);
+    notificationInterval = setInterval(() => {
+        checkAndSendNotifications();
+    }, 60 * 60 * 1000); // Toutes les heures
+    
+    // Vérifier aussi toutes les 5 minutes pour les cas urgents
+    setInterval(() => {
+        checkSubscriptionNotifications();
+    }, 5 * 60 * 1000); // Toutes les 5 minutes
+}
+
+// 9. Initialiser au chargement de l'app
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationsEnabled = localStorage.getItem('notificationsEnabled') === 'true';
+    
+    // Cocher le toggle selon l'état sauvegardé
+    const notifToggle = document.getElementById('notificationsEnabled');
+    if (notifToggle) {
+        notifToggle.checked = notificationsEnabled;
+    }
+    
+    // Démarrer les vérifications si activé
+    if (notificationsEnabled && Notification.permission === 'granted') {
+        startNotificationChecker();
+    }
+    
+    // Charger les autres préférences
+    ['budgetAlerts', 'subscriptionReminders', 'goalProgress', 'expenseReminders'].forEach(setting => {
+        const toggle = document.getElementById(setting);
+        if (toggle) {
+            toggle.checked = localStorage.getItem(setting) === 'true';
+        }
+    });
+    
+    // Charger l'heure de rappel
+    const reminderTime = document.getElementById('reminderTime');
+    if (reminderTime) {
+        reminderTime.value = localStorage.getItem('reminderTime') || '09:00';
+    }
+});
+
+// ==================== SYSTÈME D'ONBOARDING ====================
+let currentSlide = 1;
+const totalSlides = 5;
+
+// Feature carousel variables
+let currentFeature = 1;
+const totalFeatures = 4;
+let featureInterval;
+
+// Vérifier si c'est la première visite
+function checkFirstVisit() {
+    const hasVisited = localStorage.getItem('hasVisitedApp');
+    if (!hasVisited) {
+        document.getElementById('onboardingOverlay').style.display = 'flex';
+    }
+}
+
+// Démarrer la visite guidée
+function startTour() {
+    document.getElementById('welcomeScreen').style.display = 'none';
+    document.getElementById('tourScreen').style.display = 'block';
+    updateTourUI();
+}
+
+// Navigation : Slide Suivante
+function nextSlide() {
+    if (currentSlide < totalSlides) {
+        currentSlide++;
+        updateTourUI();
+    }
+}
+
+// Navigation : Slide Précédente
+function previousSlide() {
+    if (currentSlide > 1) {
+        currentSlide--;
+        updateTourUI();
+    }
+}
+
+// Mettre à jour l'affichage du tutoriel
+function updateTourUI() {
+    // 1. Gérer l'affichage des slides
+    const slides = document.querySelectorAll('.tour-slide');
+    slides.forEach(slide => {
+        const slideNum = parseInt(slide.getAttribute('data-slide'));
+        slide.style.display = (slideNum === currentSlide) ? 'block' : 'none';
+        slide.classList.toggle('active', slideNum === currentSlide);
+    });
+
+    // 2. Mettre à jour la barre de progression
+    const progressBar = document.getElementById('tourProgressBar');
+    if (progressBar) {
+        const progress = (currentSlide / totalSlides) * 100;
+        progressBar.style.width = `${progress}%`;
+    }
+
+    // 3. Gérer la visibilité des boutons
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const finishBtn = document.getElementById('finishBtn');
+
+    if (prevBtn) prevBtn.style.visibility = (currentSlide === 1) ? 'hidden' : 'visible';
+    
+    if (currentSlide === totalSlides) {
+        if (nextBtn) nextBtn.style.display = 'none';
+        if (finishBtn) finishBtn.style.display = 'block';
+    } else {
+        if (nextBtn) nextBtn.style.display = 'block';
+        if (finishBtn) finishBtn.style.display = 'none';
+    }
+}
+
+// Passer ou Terminer le tutoriel
+function skipOnboarding() {
+    if (currentSlide < totalSlides) {
+        if (!confirm('Voulez-vous vraiment passer l\'introduction ?')) return;
+    }
+    finishOnboarding();
+}
+
+function finishOnboarding() {
+    // Stop feature carousel
+    stopFeatureCarousel();
+
+    localStorage.setItem('hasVisitedApp', 'true');
+    // On cache l'overlay
+    const overlay = document.getElementById('onboardingOverlay');
+    overlay.style.opacity = '0';
+    setTimeout(() => {
+        overlay.style.display = 'none';
+
+        // Afficher le PIN overlay si un PIN existe
+        if (AppState.pinCode) {
+            lockApp();
+        }
+        showNotification('🎉', 'Bienvenue ! Commencez à gérer vos finances dès maintenant.', 'success');
+    }, 300);
+}
+
+// ==================== FEATURE CAROUSEL ====================
+
+// Initialize feature carousel when onboarding starts
+function initializeFeatureCarousel() {
+    const carousel = document.getElementById('featureCarousel');
+    const dots = document.querySelectorAll('.feature-dot');
+
+    if (!carousel || !dots.length) return;
+
+    // Start automatic carousel
+    startFeatureCarousel();
+
+    // Add click handlers to dots
+    dots.forEach((dot, index) => {
+        dot.addEventListener('click', () => goToFeature(index + 1));
+    });
+}
+
+// Start automatic feature carousel
+function startFeatureCarousel() {
+    if (featureInterval) clearInterval(featureInterval);
+
+    featureInterval = setInterval(() => {
+        currentFeature = (currentFeature % totalFeatures) + 1;
+        updateFeaturePosition();
+    }, 3000); // Change every 3 seconds
+}
+
+// Go to specific feature
+function goToFeature(featureNumber) {
+    if (featureNumber < 1 || featureNumber > totalFeatures) return;
+
+    currentFeature = featureNumber;
+    updateFeaturePosition();
+
+    // Reset timer when manually navigating
+    if (featureInterval) {
+        clearInterval(featureInterval);
+        startFeatureCarousel();
+    }
+}
+
+// Update feature carousel position
+function updateFeaturePosition() {
+    const features = document.querySelectorAll('.feature-item');
+    const dots = document.querySelectorAll('.feature-dot');
+
+    if (!features.length || !dots.length) return;
+
+    // Update feature positions
+    features.forEach((feature, index) => {
+        const featureNum = index + 1;
+        feature.className = 'feature-item'; // Reset classes
+
+        if (featureNum === currentFeature) {
+            feature.classList.add('active');
+        } else if (featureNum === currentFeature - 1 ||
+                   (currentFeature === 1 && featureNum === totalFeatures)) {
+            feature.classList.add('prev');
+        } else {
+            feature.classList.add('next');
+        }
+    });
+
+    // Update dot indicators
+    dots.forEach((dot, index) => {
+        if (index + 1 === currentFeature) {
+            dot.classList.add('active');
+        } else {
+            dot.classList.remove('active');
+        }
+    });
+}
+
+// Stop feature carousel (when onboarding is finished)
+function stopFeatureCarousel() {
+    if (featureInterval) {
+        clearInterval(featureInterval);
+        featureInterval = null;
+    }
+}
